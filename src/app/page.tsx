@@ -3,13 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const blocks = [
-  { name: "Scout", capital: "$1K", fee: "$49", target: "$180", risk: "12%" },
-  { name: "Operator", capital: "$5K", fee: "$129", target: "$760", risk: "10%", hot: true },
-  { name: "Syndicate", capital: "$10K", fee: "$249", target: "$1.6K", risk: "8%" },
-];
-
-const tape = ["SOL $176.1", "ETH $3,188", "198 migrations", "5.0M trades streamed", "indexed head 33 610 207"];
+const feed = ["BTC +2.18%", "ETH +1.44%", "SOL +8.24%", "Challenge passed", "Block unlocked"];
 
 function GithubIcon() {
   return (
@@ -45,20 +39,19 @@ export default function Home() {
 
   return (
     <main className="site-page">
-      <div className="ambient-grid" />
       <header className="site-header-wrap">
         <div className={compact ? "site-header is-compact" : "site-header"}>
           <Link className="q-brand" href="/">
             <span className="q-mark">Q</span>
             <span>
               Quantara
-              <small>paper trenches</small>
+              <small>Market is live</small>
             </span>
           </Link>
           <nav className="site-nav" aria-label="Main navigation">
+            <a href="#terminal">Terminal</a>
             <a href="#blocks">Blocks</a>
-            <a href="#trenches">Trenches</a>
-            <a href="#rules">Risk</a>
+            <a href="#rules">Rules</a>
             <a href="#faq">FAQ</a>
           </nav>
           <div className="site-actions">
@@ -74,134 +67,146 @@ export default function Home() {
       </header>
 
       <section className="hero shell">
-        <div className="hero-copy">
-          <p className="eyebrow"><span /> V5 direction, now in product</p>
-          <h1>
-            Trade the <em>trenches</em> without torching your wallet.
-          </h1>
-          <p>
-            Quantara is a paper-trading arena for fast crypto markets. Pick a Block, prove discipline against
-            live-style streams, then manage your account from a real app interface.
-          </p>
-          <div className="hero-choices" aria-label="Primary choices">
-            <Link href="/app?flow=block">Choose your block</Link>
-            <a href="#trenches">Trade the trenches</a>
+        <div className="hero-grid">
+          <div>
+            <div className="eyebrow"><span className="live-dot" /> V5 full preview, fresh file</div>
+            <h1>Trade the <span className="accent">trenches</span>, not the noise.</h1>
+            <p className="lead">
+              Quantara is a prop-style crypto arena with clean challenge blocks, transparent risk rules,
+              and a terminal-first experience.
+            </p>
+            <div className="hero-tags" aria-label="Hero actions">
+              <Link className="hero-tag primary" href="/app?flow=block">Choose your block</Link>
+              <a className="hero-tag secondary" href="#terminal">Trade the trenches</a>
+            </div>
           </div>
-        </div>
 
-        <div className="hero-terminal" aria-label="Quantara terminal preview">
-          <div className="terminal-top">
-            <span className="live-dot" /> SOL / USD
-            <strong>$176.10</strong>
-          </div>
-          <div className="terminal-chart">
-            <div className="chart-glow" />
-            <svg viewBox="0 0 520 220" role="img" aria-label="Animated market line">
-              <path d="M8 170 C58 132 82 148 122 104 S190 86 238 116 326 38 382 70 452 22 512 44" />
-              <circle cx="512" cy="44" r="6" />
-            </svg>
-          </div>
-          <div className="floating-card sol-card">
-            <small>migrated</small>
-            <b>SURI</b>
-            <span>MC $42.9K</span>
-          </div>
-          <div className="floating-card pnl-card">
-            <small>block equity</small>
-            <b>$5,318</b>
-            <span>+6.4% today</span>
+          <div className="terminal-wrap" id="terminal" aria-label="Quantara terminal preview">
+            <div className="float-card">
+              <b>SOL / USD</b>
+              <span>+8.24%</span>
+              <small>visible floating banner</small>
+            </div>
+            <div className="terminal">
+              <div className="terminal-inner">
+                <div className="terminal-bar">
+                  <span>Quantara terminal</span>
+                  <span>Live</span>
+                </div>
+                <div className="chart">
+                  <svg viewBox="0 0 520 230" preserveAspectRatio="none" role="img" aria-label="Animated market line">
+                    <path d="M0 168 C55 122 78 194 130 144 S216 92 260 116 S340 186 386 106 S462 68 520 32" />
+                  </svg>
+                </div>
+                <div className="trade-row">
+                  <div className="tile">Equity<strong>$100,000</strong></div>
+                  <div className="tile">Daily PnL<strong className="positive">+$2,840</strong></div>
+                  <div className="tile">Drawdown<strong>3.1%</strong></div>
+                </div>
+                <div className="trade-row">
+                  <div className="tile">BTC Long<strong>2.4x</strong></div>
+                  <div className="tile">ETH Short<strong className="negative">-0.8%</strong></div>
+                  <div className="tile">Risk left<strong>71%</strong></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="market-tape">
-        {[...tape, ...tape].map((item, index) => (
-          <span key={`${item}-${index}`}>⚡ {item}</span>
-        ))}
+      <div className="feed">
+        <div className="feed-track">
+          {[...feed, ...feed].map((item, index) => (
+            <span key={`${item}-${index}`}>{item}</span>
+          ))}
+        </div>
       </div>
 
       <section id="blocks" className="section shell">
         <div className="section-head">
-          <p className="kicker">Choose your block</p>
-          <h2>Three lanes. One clean risk engine.</h2>
-          <p>
-            Start with simulated capital, clear limits, and a product flow that feels like a real terminal,
-            not a spreadsheet with a buy button.
-          </p>
-        </div>
-        <div className="block-grid">
-          {blocks.map((block) => (
-            <article className={block.hot ? "block-card hot" : "block-card"} key={block.name}>
-              {block.hot && <span className="card-badge">popular</span>}
-              <small>{block.name}</small>
-              <h3>{block.capital}</h3>
-              <dl>
-                <div><dt>Entry</dt><dd>{block.fee}</dd></div>
-                <div><dt>Target</dt><dd>{block.target}</dd></div>
-                <div><dt>Max risk</dt><dd>{block.risk}</dd></div>
-              </dl>
-              <Link href="/app?flow=signup">Start block</Link>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section id="trenches" className="section trenches shell">
-        <div className="trenches-panel">
           <div>
-            <p className="kicker">Trade the trenches</p>
-            <h2>Fast lists, filters, and paper fills.</h2>
-            <p>
-              The app screen follows the blockfirn-style workflow from your reference: token lanes, migrated
-              pairs, instant buy sizing, account state, and a wallet-first login modal.
-            </p>
+            <span className="section-kicker">Challenge blocks</span>
+            <h2 className="section-title">Choose your block.</h2>
           </div>
-          <div className="mini-list">
-            {["SURI", "SPLASHDOG", "NIGHTTRADER"].map((name, index) => (
-              <div key={name}>
-                <span className="coin-avatar">{name.slice(0, 1)}</span>
-                <b>{name}</b>
-                <small>{index === 1 ? "+127.0%" : index === 2 ? "-29.5%" : "$42.9K"}</small>
-                <Link href="/app">Buy $50</Link>
-              </div>
-            ))}
-          </div>
+          <p className="section-copy">Three account styles, one clean rule set. Pick the size and pressure level, then prove you can stay alive when the market starts pushing back.</p>
+        </div>
+        <div className="blocks">
+          <article className="block"><span>01</span><h3>Starter Block</h3><p>Lower risk, cleaner targets, quick entry for first challenge traders.</p><strong>$25k simulated equity</strong></article>
+          <article className="block"><span>02</span><h3>Trench Block</h3><p>Higher intensity, tighter discipline, bigger upside for consistent execution.</p><strong>$100k simulated equity</strong></article>
+          <article className="block"><span>03</span><h3>Apex Block</h3><p>Top-tier funded environment with strict rules and premium account scale.</p><strong>$250k simulated equity</strong></article>
         </div>
       </section>
 
       <section id="rules" className="section shell">
-        <div className="rule-row">
-          <article>
-            <span>01</span>
-            <h3>Wallet signs in</h3>
-            <p>No custodial deposits in the preview. Phantom, WalletConnect, MetaMask, or email creates the account shell.</p>
-          </article>
-          <article>
-            <span>02</span>
-            <h3>Paper fills only</h3>
-            <p>Trades are priced from the simulated stream. You can show the customer the flow without touching real liquidity.</p>
-          </article>
-          <article>
-            <span>03</span>
-            <h3>Risk stays visible</h3>
-            <p>Equity, loss limit, active block, and account status stay in the product chrome at all times.</p>
-          </article>
+        <div className="section-head">
+          <div>
+            <span className="section-kicker">Trade the trenches</span>
+            <h2 className="section-title">The arena reacts while you trade.</h2>
+          </div>
+          <p className="section-copy">The lower part of the site should feel like product, not brochure. These panels show live positions, breaches, targets, and payout state with small motion.</p>
+        </div>
+        <div className="trenches">
+          <div className="signal-panel">
+            <div className="signal-inner">
+              <div className="signal-row"><span className="orb" /><div><small>BTC position</small><strong>Long 2.4x</strong></div><b>+1.82%</b></div>
+              <div className="signal-row"><span className="orb" /><div><small>ETH hedge</small><strong>Short 1.1x</strong></div><b className="negative">-0.34%</b></div>
+              <div className="signal-row"><span className="orb" /><div><small>Daily loss used</small><strong>1.2% / 4%</strong></div><b>Safe</b></div>
+              <div className="signal-row"><span className="orb" /><div><small>Profit target</small><strong>6.8% / 8%</strong></div><b>Near</b></div>
+              <div className="chart small-chart">
+                <svg viewBox="0 0 520 150" preserveAspectRatio="none" aria-hidden="true">
+                  <path d="M0 118 C58 90 82 116 128 72 S210 38 260 66 S340 122 394 54 S462 22 520 36" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div className="rule-stack">
+            <article className="rule-item"><span className="rule-num">1</span><div><h3>Targets before hype</h3><p>Profit target, max daily loss, and max drawdown are visible before a block starts.</p></div></article>
+            <article className="rule-item"><span className="rule-num">2</span><div><h3>Breach states are obvious</h3><p>If the account breaks a rule, the interface should show what happened without hiding behind vague copy.</p></div></article>
+            <article className="rule-item"><span className="rule-num">3</span><div><h3>Manual payout review</h3><p>No fake instant promises. Rewards stay honest: simulated trading first, review and approval after.</p></div></article>
+            <article className="rule-item"><span className="rule-num">4</span><div><h3>Crypto-native pacing</h3><p>Market tape, positions, account pressure, and challenge progress stay alive while the user scrolls.</p></div></article>
+          </div>
+        </div>
+      </section>
+
+      <section className="section shell">
+        <div className="payout-grid">
+          <div className="payout-panel">
+            <span className="section-kicker">Funded simulation</span>
+            <h2 className="section-title payout-title">Built for traders who can survive pressure.</h2>
+            <p className="section-copy payout-copy">Quantara can present the whole loop clearly: choose a block, trade simulated crypto markets, respect risk limits, submit for review, then unlock the next arena.</p>
+          </div>
+          <div className="payout-panel">
+            <span className="section-kicker">Live account feel</span>
+            <div className="stat-grid">
+              <div className="stat"><span>Pass target</span><b>8%</b></div>
+              <div className="stat"><span>Daily max loss</span><b>4%</b></div>
+              <div className="stat"><span>Reward split</span><b>80%</b></div>
+              <div className="stat"><span>Review window</span><b>24h</b></div>
+            </div>
+          </div>
         </div>
       </section>
 
       <section id="faq" className="section faq shell">
-        <h2>Launch-ready preview, not final custody.</h2>
-        <p>
-          The current build focuses on the visual product experience: landing, app dashboard, registration modal,
-          wallet choices, and paper-trading interface. Real auth, wallet signatures, payments, and market APIs can
-          be wired after the design is approved.
-        </p>
-        <Link className="launch-button big" href="/app">Open app preview</Link>
+        <div className="section-head">
+          <div>
+            <span className="section-kicker">Questions</span>
+            <h2 className="section-title">No fog, no maze.</h2>
+          </div>
+          <p className="section-copy">These are placeholder FAQ cards for the design preview. If you approve the direction, I will wire this into the real Quantara pages and replace copy with final product text.</p>
+        </div>
+        <div className="faq-grid">
+          <article className="faq-card"><h3>Is this real trading?</h3><p>The preview positions Quantara as simulated evaluation first, so promises stay clean and believable.</p></article>
+          <article className="faq-card"><h3>Why this structure?</h3><p>The page only points to sections that exist in the current concept: terminal, blocks, rules, and FAQ.</p></article>
+          <article className="faq-card"><h3>What happens next?</h3><p>After approval, this visual system moves into the real app with responsive layout and production styling.</p></article>
+        </div>
       </section>
 
-      <footer className="site-footer shell">
-        <Link className="q-brand" href="/"><span className="q-mark">Q</span>Quantara</Link>
-        <span>© 2026 Quantara · simulated trading only</span>
+      <footer className="footer shell">
+        <div className="footer-inner">
+          <strong>Quantara</strong>
+          <span>Prop-style crypto challenge arena · visual preview</span>
+        </div>
       </footer>
     </main>
   );
