@@ -29,11 +29,33 @@ export type PortfolioSnapshot = {
   activeBlock: BlockTier | null;
 };
 
+export type RiskSnapshot = {
+  portfolioValue: number;
+  unrealizedPnl: number;
+  totalPnl: number;
+  targetProgress: number;
+  maxLossBuffer: number | null;
+  breached: boolean;
+};
+
+export type TreasurySnapshot = {
+  balance: number;
+  reserved: number;
+  available: number;
+  currency: "USDC";
+  wallet: string;
+  network: "BNB";
+  receiptMode: "awaiting-first-public-payout";
+};
+
 export type AppSnapshot = {
   session: UserSession | null;
   tokens: Token[];
   blockTiers: BlockTier[];
+  favorites: string[];
   portfolio: PortfolioSnapshot;
+  risk: RiskSnapshot;
+  treasury: TreasurySnapshot;
   status: {
     latencyMs: number;
     indexedHead: number;

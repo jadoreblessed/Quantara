@@ -41,7 +41,7 @@ export default function AppPage() {
   const [showLocked, setShowLocked] = useState(true);
   const [minLiquidity, setMinLiquidity] = useState(0);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [favorites, setFavorites] = useState<Set<string>>(() => new Set());
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [showAuth, setShowAuth] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [authEmail, setAuthEmail] = useState("");
@@ -68,6 +68,7 @@ export default function AppPage() {
   const applySnapshot = useCallback((snapshot: AppSnapshot) => {
     setMarketTokens(snapshot.tokens);
     setAvailableBlocks(snapshot.blockTiers);
+    setFavorites(snapshot.favorites);
     setUserName(snapshot.session?.name ?? null);
     setPaperCash(snapshot.portfolio.cash);
     setPositions(snapshot.portfolio.positions);
@@ -98,7 +99,7 @@ export default function AppPage() {
       if (token.chain !== chain) return false;
       if (normalizedQuery && !`${token.ticker} ${token.name}`.toLowerCase().includes(normalizedQuery)) return false;
       if (!showLocked && token.locked) return false;
-      if (favoritesOnly && !favorites.has(token.ticker)) return false;
+      if (favoritesOnly && !favorites.includes(token.ticker)) return false;
       if (token.liquidity < minLiquidity) return false;
       if (autoFilter && (token.locked || token.liquidity < 10000 || token.top10 > 30)) return false;
       return true;
@@ -117,11 +118,14 @@ export default function AppPage() {
   const totalPnl = portfolioValue - startingBalance;
   const targetProgress = activeBlock ? Math.max(0, Math.min(100, (totalPnl / activeBlock.target) * 100)) : 0;
 
-  const toggleFavorite = (ticker: string) => setFavorites((current) => {
-    const next = new Set(current);
-    if (next.has(ticker)) next.delete(ticker); else next.add(ticker);
-    return next;
-  });
+  const toggleFavorite = (ticker: string) => {
+    const favorite = !favorites.includes(ticker);
+    setFavorites((current) => favorite ? [...current, ticker] : current.filter((item) => item !== ticker));
+    void api("/api/favorites", { method: "POST", body: JSON.stringify({ ticker, favorite }) }).catch(() => {
+      setFavorites((current) => favorite ? current.filter((item) => item !== ticker) : [...current, ticker]);
+      flash("Favorite sync failed");
+    });
+  };
 
   const openOrder = (token: Token, side: OrderSide = "buy") => {
     if (token.locked) {
@@ -228,7 +232,7 @@ export default function AppPage() {
           chain={chain} setChain={setChain} query={query} setQuery={setQuery} sort={sort} setSort={setSort}
           autoFilter={autoFilter} setAutoFilter={setAutoFilter} showFilters={showFilters} setShowFilters={setShowFilters}
           showLocked={showLocked} setShowLocked={setShowLocked} minLiquidity={minLiquidity} setMinLiquidity={setMinLiquidity}
-          favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly} favorites={favorites} toggleFavorite={toggleFavorite}
+          favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly} favorites={new Set(favorites)} toggleFavorite={toggleFavorite}
           buySize={buySize} setBuySize={setBuySize} visibleTokens={visibleTokens} openOrder={openOrder}
         /> : null}
 

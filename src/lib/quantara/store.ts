@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
-import { blockTiers, getBlockTier, getToken, tokens } from "./data";
-import type { AppSnapshot, OrderSide, PortfolioSnapshot, Trade, UserSession } from "./types";
+import { blockTiers, getBlockTier, getToken, tokens, treasury } from "./data";
+import type { AppSnapshot, OrderSide, PortfolioSnapshot, RiskSnapshot, Trade, UserSession } from "./types";
 
 const SESSION_COOKIE = "quantara_session";
 
-type StoredSession = UserSession & PortfolioSnapshot;
+type StoredSession = UserSession & PortfolioSnapshot & { favorites: string[] };
 type MemoryStore = Map<string, StoredSession>;
 
 const globalStore = globalThis as typeof globalThis & { quantaraStore?: MemoryStore };
@@ -17,6 +17,17 @@ const defaultPortfolio = (): PortfolioSnapshot => ({
   trades: [],
   activeBlock: null,
 });
+
+function defaultRisk(): RiskSnapshot {
+  return {
+    portfolioValue: 5000,
+    unrealizedPnl: 0,
+    totalPnl: 0,
+    targetProgress: 0,
+    maxLossBuffer: null,
+    breached: false,
+  };
+}
 
 const newId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -40,6 +51,7 @@ export async function createSession(email?: string, provider?: string) {
     name: rawName || "trader",
     email,
     createdAt: new Date().toISOString(),
+    favorites: [],
     ...defaultPortfolio(),
   };
   store.set(id, session);
@@ -58,19 +70,62 @@ function publicSession(session: StoredSession | null): UserSession | null {
   return { id: session.id, name: session.name, email: session.email, createdAt: session.createdAt };
 }
 
+function calculateRisk(session: StoredSession | null): RiskSnapshot {
+  if (!session) return defaultRisk();
+  const positionRows = session.positions.flatMap((position) => {
+    const token = getToken(position.ticker);
+    return token ? [{ value: position.quantity * token.price, pnl: (token.price - position.averagePrice) * position.quantity }] : [];
+  });
+  const portfolioValue = session.cash + positionRows.reduce((sum, position) => sum + position.value, 0);
+  const unrealizedPnl = positionRows.reduce((sum, position) => sum + position.pnl, 0);
+  const startingBalance = session.activeBlock?.size ?? 5000;
+  const totalPnl = portfolioValue - startingBalance;
+  const targetProgress = session.activeBlock ? Math.max(0, Math.min(100, (totalPnl / session.activeBlock.target) * 100)) : 0;
+  const maxLossBuffer = session.activeBlock ? session.activeBlock.maxLoss + totalPnl : null;
+  return {
+    portfolioValue,
+    unrealizedPnl,
+    totalPnl,
+    targetProgress,
+    maxLossBuffer,
+    breached: typeof maxLossBuffer === "number" ? maxLossBuffer <= 0 : false,
+  };
+}
+
 export async function getSnapshot(): Promise<AppSnapshot> {
   const session = await getCurrentSession();
+  const risk = calculateRisk(session);
   return {
     session: publicSession(session),
     tokens,
     blockTiers,
+    favorites: session?.favorites ?? [],
     portfolio: session ? { cash: session.cash, positions: session.positions, trades: session.trades, activeBlock: session.activeBlock } : defaultPortfolio(),
+    risk,
+    treasury,
     status: {
       latencyMs: 86 + Math.floor(Math.random() * 32),
       indexedHead: 33610207 + Math.floor(Date.now() / 120000) % 9000,
       mode: "simulation",
     },
   };
+}
+
+export async function getPortfolio() {
+  const session = await getCurrentSession();
+  return {
+    session: publicSession(session),
+    portfolio: session ? { cash: session.cash, positions: session.positions, trades: session.trades, activeBlock: session.activeBlock } : defaultPortfolio(),
+    risk: calculateRisk(session),
+  };
+}
+
+export function getMarkets() {
+  return { tokens, blockTiers };
+}
+
+export function getTreasury() {
+  return treasury;
 }
 
 export async function activateBlock(size: number) {
@@ -92,13 +147,35 @@ export async function clearJournal() {
   return getSnapshot();
 }
 
+export async function setFavorite(ticker: string, favorite: boolean) {
+  const session = await getCurrentSession();
+  if (!session) throw new Error("AUTH_REQUIRED");
+  const token = getToken(ticker);
+  if (!token) throw new Error("TOKEN_NOT_FOUND");
+  const favorites = new Set(session.favorites);
+  if (favorite) favorites.add(token.ticker);
+  else favorites.delete(token.ticker);
+  session.favorites = [...favorites];
+  return getSnapshot();
+}
+
+export async function logout() {
+  const id = await getSessionId();
+  if (id) store.delete(id);
+  (await cookies()).delete(SESSION_COOKIE);
+  return getSnapshot();
+}
+
 export async function executeOrder(input: { ticker: string; side: OrderSide; amount: number }) {
   const session = await getCurrentSession();
   if (!session) throw new Error("AUTH_REQUIRED");
+  if (input.side !== "buy" && input.side !== "sell") throw new Error("INVALID_SIDE");
   const token = getToken(input.ticker);
   if (!token) throw new Error("TOKEN_NOT_FOUND");
   if (token.locked) throw new Error("MARKET_LOCKED");
   const amount = Math.max(1, Math.round(input.amount * 100) / 100);
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error("INVALID_AMOUNT");
+  if (amount > 10000) throw new Error("ORDER_TOO_LARGE");
   const quantity = amount / token.price;
   const existing = session.positions.find((position) => position.ticker === token.ticker);
 

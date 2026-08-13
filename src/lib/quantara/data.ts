@@ -1,4 +1,4 @@
-import type { BlockTier, Token } from "./types";
+import type { BlockTier, Token, TreasurySnapshot } from "./types";
 
 export const tokens: Token[] = [
   { ticker: "SURI", name: "Suri", chain: "SOL", ageMinutes: 2, liquidity: 12300, holders: 308, top10: 23, marketCap: 42900, volume: 17400, change: 18.4, price: 0.000429 },
@@ -17,6 +17,16 @@ export const blockTiers: BlockTier[] = [
   { size: 3000, target: 3000, maxLoss: 2400, fee: 179 },
   { size: 5000, target: 5000, maxLoss: 4000, fee: 249 },
 ];
+
+export const treasury: TreasurySnapshot = {
+  balance: 10000,
+  reserved: 2400,
+  available: 7600,
+  currency: "USDC",
+  wallet: "QUANTARA_TREASURY_WALLET",
+  network: "BNB",
+  receiptMode: "awaiting-first-public-payout",
+};
 
 export function getToken(ticker: string) {
   return tokens.find((token) => token.ticker === ticker.toUpperCase());
