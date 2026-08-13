@@ -15,7 +15,7 @@ type Candle = {
 };
 
 function createCandles(width: number, height: number, compact: boolean) {
-  const count = compact ? 24 : 46;
+  const count = compact ? 14 : 28;
   let seed = 247;
   const random = () => {
     seed = (seed * 16807) % 2147483647;
@@ -63,7 +63,7 @@ export function LiquidCandles() {
 
     const resize = () => {
       const rect = hero.getBoundingClientRect();
-      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.25);
       width = Math.max(1, rect.width);
       height = Math.max(1, rect.height);
       canvas.width = Math.round(width * ratio);
@@ -81,7 +81,7 @@ export function LiquidCandles() {
     const draw = (time: number) => {
       if (!visible) return;
 
-      if (time - lastFrame < 33 && !reducedMotion.matches) {
+      if (time - lastFrame < 48 && !reducedMotion.matches) {
         frame = window.requestAnimationFrame(draw);
         return;
       }

@@ -136,7 +136,7 @@
 .bf-machine-rows div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid rgba(150,168,200,.08); }.bf-machine-rows div:last-child { border-bottom: 0; }
 .bf-machine-rows span { color: var(--bf-dim); font-family: "IBM Plex Mono",var(--font-geist-mono),monospace; font-size: 9px; letter-spacing: .13em; }.bf-machine-rows b { color: var(--bf-text); font-family: "IBM Plex Mono",var(--font-geist-mono),monospace; font-size: 10px; font-weight: 500; text-align: right; }
 
-.bf-section { padding: 110px 0; }
+.bf-section { padding: 110px 0; content-visibility: auto; contain-intrinsic-size: 780px; }
 .bf-section h2 { margin: 0 0 14px; font-family: "Unbounded",var(--font-geist-sans),sans-serif; font-size: clamp(24px,3vw,34px); font-weight: 500; line-height: 1.22; letter-spacing: -.005em; }
 .bf-section-head { max-width: 620px; margin-bottom: 58px; }.bf-section-head p { color: var(--bf-mute); font-size: 17px; }.bf-section-head h2 b { color: var(--bf-accent); font-weight: 500; }
 .bf-kicker { display: inline-block; margin-bottom: 12px; color: var(--bf-accent); font-family: "IBM Plex Mono",var(--font-geist-mono),monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
@@ -208,6 +208,8 @@
   .bf-compare { grid-template-columns: 1fr; }.bf-compare article:first-child { border-right: 0; border-bottom: 1px solid var(--bf-edge); }
   .bf-primitives { grid-template-columns: 1fr 1fr; }.bf-primitives article.wide { grid-column: span 2; }
   .bf-treasury-grid { grid-template-columns: 1fr; }.bf-treasury { border-right: 0; border-bottom: 1px solid var(--bf-edge); }
+  .bf-circuit-grid,.bf-market-pulse { opacity: .08; }
+  .bf-float-chip { display: none; }
   .bf-section { padding: 76px 0; }.bf-mobile-cta { display: block; }.bf-footer { padding-bottom: 130px; }
 }
 
@@ -224,12 +226,13 @@
   .bf-payout-head { display: none; }
   .bf-aurora { width: 110vw; filter: blur(70px); opacity: .09; }
   .bf-market-grid { background-size: 52px 52px; }
+  .bf-circuit-grid,.bf-market-pulse { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .bf-home * { animation: none !important; transition: none !important; }
   .bf-statline,.bf-hero-sub,.bf-hero-cta,.bf-reveal { opacity: 1; transform: none; }
-  .bf-scanline { display: none; }
+  .bf-scanline,.bf-circuit-grid,.bf-market-pulse,.bf-float-chip { display: none; }
 }
 
 .bf-flow-section,.bf-marketplace-section,.bf-simulator-section,#payouts { position: relative; overflow: hidden; }
@@ -286,10 +289,11 @@
   .bf-terminal-flow,.bf-simulator { grid-template-columns: 1fr; }
   .bf-block-market { grid-template-columns: 1fr; }
   .bf-block-market article { min-height: auto; }
+  .bf-circuit-grid,.bf-market-pulse { opacity: .08; }
 }
 
 @media (max-width: 640px) {
-  .bf-float-chip { display: none; }
+  .bf-circuit-grid,.bf-market-pulse { display: none; }
   .bf-terminal-flow { gap: 12px; }.bf-console-lines { padding: 18px; }.bf-flow-console { min-height: auto; }
   .bf-flow-steps article,.bf-block-market article { padding: 20px; }
   .bf-sim-right { grid-template-columns: 1fr; }.bf-sim-right article:first-child,.bf-sim-progress { grid-column: auto; }
@@ -3413,7 +3417,7 @@ svg {
 .sort-select { width: auto; color: #68758a; font-size: 10px; text-transform: uppercase; }
 .sort-select select { border: 0; outline: 0; color: #d9e0eb; background: transparent; font-weight: 800; text-transform: lowercase; }
 .token-list { max-height: calc(100vh - 235px); }
-.token-row { grid-template-columns: 24px 44px minmax(280px,1fr) 140px 94px; min-height: 68px; padding: 7px 13px; gap: 12px; }
+.token-row { grid-template-columns: 24px 44px minmax(280px,1fr) 140px 94px; min-height: 68px; padding: 7px 13px; gap: 12px; contain: content; content-visibility: auto; contain-intrinsic-size: 68px; }
 .token-avatar { width: 42px; height: 42px; border-radius: 10px; }
 .favorite-token { display: grid; place-items: center; padding: 0; border: 0; color: #3f4c60; background: transparent; }
 .favorite-token:hover,.favorite-token.active { color: #d8ef72; }
