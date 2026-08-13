@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LiquidCandles } from "@/components/liquid-candles";
 
 const tiers = [
@@ -20,6 +20,8 @@ function LinkIcon() {
 
 export default function Home() {
   const [announcement, setAnnouncement] = useState(true);
+  const [treasuryBalance, setTreasuryBalance] = useState(0);
+  const treasuryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -29,6 +31,43 @@ export default function Home() {
     document.querySelectorAll(".bf-reveal").forEach((element) => observer.observe(element));
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const treasury = treasuryRef.current;
+    if (!treasury) return;
+
+    let frame = 0;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      frame = requestAnimationFrame(() => setTreasuryBalance(10000));
+      return () => cancelAnimationFrame(frame);
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      const startedAt = performance.now();
+      const animate = (now: number) => {
+        const progress = Math.min((now - startedAt) / 1350, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setTreasuryBalance(Math.round(10000 * eased));
+        if (progress < 1) frame = requestAnimationFrame(animate);
+      };
+      frame = requestAnimationFrame(animate);
+      observer.disconnect();
+    }, { threshold: 0.35 });
+
+    observer.observe(treasury);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  function moveTreasuryGlow(event: React.PointerEvent<HTMLDivElement>) {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.style.setProperty("--treasury-x", `${event.clientX - bounds.left}px`);
+    event.currentTarget.style.setProperty("--treasury-y", `${event.clientY - bounds.top}px`);
+  }
 
   return (
     <main className="bf-home">
@@ -76,6 +115,13 @@ export default function Home() {
             <div className="bf-hero-cta"><Link className="bf-btn bf-btn-accent" href="/app">find your block</Link><Link className="bf-btn bf-btn-outline" href="/app">open the terminal</Link></div>
           </div>
         </div>
+        <div className="bf-live-ticker" aria-label="Quantara platform status">
+          <div className="bf-live-ticker-track">
+            {[0, 1].map((copy) => <div className="bf-live-ticker-set" aria-hidden={copy === 1} key={copy}>
+              <span><i /> BNB Chain connected</span><span>paper markets live</span><span>90% trader split</span><span>$10,000 treasury</span><span>on-chain verification</span>
+            </div>)}
+          </div>
+        </div>
       </header>
 
       <section id="how" className="bf-section"><div className="bf-wrap">
@@ -108,7 +154,26 @@ export default function Home() {
         <div className="bf-section-head bf-reveal"><h2>Every payout is a public transaction</h2><p>We pay in crypto, which means every payout comes with an on-chain receipt anyone can verify. No screenshots, no trust-me · just the chain.</p></div>
         <div className="bf-payout-wall bf-reveal"><div className="bf-payout-head"><span>trader</span><span>payout</span><span>network</span><span>receipt</span></div><div className="bf-payout-empty"><b>No payouts yet · but funded Blocks are active.</b><span>The moment the first funded trader gets paid, their transaction hash appears here and you can verify it on-chain yourself. We would rather show an empty wall than invent one.</span></div></div>
         <div className="bf-section-head bf-reveal treasury-head"><h2>Live <b>Treasury Funds</b></h2><p>Payouts are backed by USDC held in the treasury wallet. The balance below is visible and can be verified on-chain.</p></div>
-        <div className="bf-treasury bf-reveal"><div className="live"><i /> Live · USDC treasury</div><div className="amount">$10,000<span>USDC</span></div><p>Connected to the Quantara USDC treasury · verifiable on-chain</p><div className="wallet"><span>Wallet</span><b>QUANTARA_TREASURY_WALLET</b></div><a className="bf-btn bf-btn-outline" href="#payouts">Verify on-chain ↗</a></div>
+        <div className="bf-treasury-grid bf-reveal" ref={treasuryRef} onPointerMove={moveTreasuryGlow}>
+          <div className="bf-treasury">
+            <div className="live"><i /> Live · USDC treasury</div>
+            <div className="amount">${treasuryBalance.toLocaleString("en-US")}<span>USDC</span></div>
+            <p>Connected to the Quantara USDC treasury · verifiable on-chain</p>
+            <div className="wallet"><span>Wallet</span><b>QUANTARA_TREASURY_WALLET</b></div>
+            <a className="bf-btn bf-btn-outline" href="#payouts">Verify on-chain ↗</a>
+          </div>
+          <aside className="bf-treasury-flow" aria-label="Treasury flow">
+            <div className="bf-flow-heading"><div><small>LIVE SYSTEM</small><h3>Treasury flow</h3></div><span><i /> synced</span></div>
+            <div className="bf-flow-map" aria-hidden="true">
+              <span className="bf-flow-line line-a"><i /></span><span className="bf-flow-line line-b"><i /></span>
+              <div className="bf-flow-node treasury"><small>TREASURY</small><b>$10K</b></div>
+              <div className="bf-flow-node blocks"><small>ACTIVE BLOCKS</small><b>24</b></div>
+              <div className="bf-flow-node payouts"><small>PAYOUT RAIL</small><b>READY</b></div>
+            </div>
+            <div className="bf-flow-stats"><span><small>Reserved</small><b>$2,400</b></span><span><small>Available</small><b>$7,600</b></span></div>
+            <div className="bf-flow-activity"><div><span className="bf-activity-icon">↗</span><p><b>Demo payout queue</b><small>Simulation preview · no public payout yet</small></p><time>ready</time></div><div><span className="bf-activity-icon cyan">✓</span><p><b>BNB Chain sync</b><small>Treasury monitor is online</small></p><time>live</time></div></div>
+          </aside>
+        </div>
       </div></section>
 
       <div className="bf-final"><div className="bf-glow" /><div className="bf-wrap"><p>your skill.<br /><b>your funded Block.</b></p><Link className="bf-btn bf-btn-accent" href="/app">get your block</Link></div></div>
