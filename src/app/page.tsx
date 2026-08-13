@@ -2,122 +2,134 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
 
-const steps = [
-  { number: "[ 01 ]", label: "choose", title: "Choose a block", copy: "Pick an evaluation size and review every target, daily-loss limit, and drawdown rule before the run starts." },
-  { number: "[ 02 ]", label: "trade", title: "Trade the market", copy: "Enter the terminal, trade live crypto pairs in simulation, and keep every position inside the visible risk rules." },
-  { number: "[ 03 ]", label: "unlock", title: "Unlock the next level", copy: "Reach the target without a breach, submit the run for review, and move into the next Quantara arena." },
+const tiers = [
+  { size: "$1,000", note: "evaluation block", target: "$2,000", loss: "$800", split: "90%", price: "$99 · start" },
+  { size: "$3,000", note: "evaluation block · most popular", target: "$3,000", loss: "$2,400", split: "90%", price: "$179 · start", hot: true },
+  { size: "$5,000", note: "evaluation block", target: "$5,000", loss: "$4,000", split: "90%", price: "$249 · start" },
 ];
 
-const blocks = [
-  { mark: "25", name: "Starter Block", meta: "$25K simulated equity", target: "8%" },
-  { mark: "100", name: "Trench Block", meta: "$100K simulated equity", target: "8%" },
-  { mark: "250", name: "Apex Block", meta: "$250K simulated equity", target: "10%" },
-];
-
-const benefits = [
-  { number: "[ 01 ]", mark: "R", title: "Rules before hype", copy: "Targets, daily loss, and maximum drawdown stay visible before and during every evaluation." },
-  { number: "[ 02 ]", mark: "T", title: "Terminal-first", copy: "Quantara feels like a place to trade, with positions, market pressure, and account state always in view." },
-  { number: "[ 03 ]", mark: "V", title: "Verifiable runs", copy: "Every trade, breach, target, and review state remains readable from the first order to the final result." },
-];
-
-const marketLeft = [["BTC / USD", "$126.4K", "+18.8%"], ["SOL / USD", "$94.8K", "+42.1%"], ["ETH / USD", "$71.2K", "-6.4%"], ["ARB / USD", "$38.6K", "+12.7%"], ["LINK / USD", "$26.1K", "+9.3%"]];
-const marketRight = [["DOGE / USD", "$102.7K", "+31.4%"], ["AVAX / USD", "$82.3K", "-8.2%"], ["SUI / USD", "$64.9K", "+24.6%"], ["BNB / USD", "$44.8K", "+4.1%"], ["OP / USD", "$29.4K", "-3.6%"]];
-
-function Arrow() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>;
+function Logo() {
+  return (
+    <span className="bf-logo-mark" aria-hidden="true">
+      <svg viewBox="0 0 72 72">
+        <rect width="72" height="72" rx="17" />
+        <g transform="translate(36,36) rotate(-45)">
+          <rect x="-27" y="-9" width="24" height="18" rx="9" />
+          <rect x="3" y="-9" width="24" height="18" rx="9" />
+          <line x1="-9" y1="0" x2="9" y2="0" />
+        </g>
+      </svg>
+    </span>
+  );
 }
 
 function XIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.51 11.24h-6.66l-5.22-6.82-5.96 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64Z" /></svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>;
 }
 
-function Button({ href, children, ghost = false }: { href: string; children: ReactNode; ghost?: boolean }) {
-  return <Link className={`rf-btn ${ghost ? "rf-btn-ghost" : "rf-btn-primary"}`} href={href}><span className="rf-btn-label">{children}</span>{!ghost && <span className="rf-btn-arrow"><Arrow /></span>}</Link>;
+function DiscordIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.93-1.51 13.78 13.78 0 0 0-.64 1.28 18.27 18.27 0 0 0-5.5 0 12.64 12.64 0 0 0-.64-1.28c-1.71.29-3.37.8-4.93 1.51A20.26 20.26 0 0 0 .1 18.06a19.9 19.9 0 0 0 6.07 3.03c.49-.66.93-1.37 1.3-2.1a12.9 12.9 0 0 1-2.05-.98l.5-.38a14.2 14.2 0 0 0 12.16 0l.5.38c-.65.39-1.34.72-2.05.98.38.74.81 1.44 1.3 2.1a19.84 19.84 0 0 0 6.07-3.03 20.2 20.2 0 0 0-2.58-13.69ZM8.01 15.33c-1.18 0-2.16-1.08-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Zm7.98 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Z" /></svg>;
+}
+
+function LinkIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><g transform="rotate(-45 12 12)"><rect x="3.5" y="7.6" width="17" height="8.8" rx="4.4" /><line x1="12" y1="7.6" x2="12" y2="16.4" /></g></svg>;
 }
 
 export default function Home() {
-  const [slide, setSlide] = useState(0);
-  const [scrolled, setScrolled] = useState(false);
-  const [pastHero, setPastHero] = useState(false);
+  const [announcement, setAnnouncement] = useState(true);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setSlide((value) => (value + 1) % 3), 2600);
-    const update = () => {
-      setScrolled(window.scrollY > 8);
-      setPastHero(window.scrollY > window.innerHeight * 0.78);
-      const root = document.querySelector<HTMLElement>(".rf-home");
-      const height = document.documentElement.scrollHeight - window.innerHeight;
-      root?.style.setProperty("--rf-progress", `${height > 0 ? (window.scrollY / height) * 100 : 0}%`);
-    };
-    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("is-visible")), { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
-    document.querySelectorAll(".rf-reveal").forEach((element) => observer.observe(element));
-    window.addEventListener("scroll", update, { passive: true });
-    update();
-    return () => { window.clearInterval(timer); window.removeEventListener("scroll", update); observer.disconnect(); };
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("in")),
+      { threshold: 0.15 },
+    );
+    document.querySelectorAll(".bf-reveal").forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
   }, []);
 
   return (
-    <main className="rf-home">
-      <div className="rf-progress" />
-      <nav className={`rf-nav ${scrolled ? "is-scrolled" : ""} ${pastHero ? "is-green" : ""}`}>
-        <div className="rf-wrap rf-nav-in">
-          <Link className="rf-brand" href="#top"><span className="rf-logo">Q</span><span className="rf-brand-name">Quantara</span><span className="rf-beta">Beta</span></Link>
-          <div className="rf-nav-links"><a href="#demo">App</a><span>//</span><a href="#how">How it works</a><span>//</span><a href="#ecosystem">Ecosystem</a><span>//</span><a href="#blocks">Blocks</a></div>
-          <div className="rf-nav-actions"><a className="rf-nav-icon" href="https://x.com" aria-label="Quantara on X"><XIcon /></a><Button href="/docs" ghost>Docs</Button><Button href="/app">Launch App</Button></div>
+    <main className="bf-home">
+      <link rel="stylesheet" href="https://myblockfirm.com/fonts/fonts.css" />
+
+      {announcement && (
+        <div className="bf-announcement">
+          <span>Code <b>EARLY</b> for <b>50% off</b> ANY evaluation Block · ending soon</span>
+          <button type="button" aria-label="Dismiss announcement" onClick={() => setAnnouncement(false)}>×</button>
+        </div>
+      )}
+
+      <nav className="bf-nav">
+        <div className="bf-wrap bf-nav-in">
+          <Link className="bf-logo" href="#top"><Logo /><span>quantara<span className="bf-cursor" /></span></Link>
+          <span className="bf-socials">
+            <a href="https://x.com" target="_blank" rel="noreferrer" aria-label="X / Twitter"><XIcon /></a>
+            <a href="https://discord.gg/QaFXA67QP" target="_blank" rel="noreferrer" aria-label="Discord"><DiscordIcon /></a>
+            <a href="https://github.com/jadoreblessed/Quantara" target="_blank" rel="noreferrer" aria-label="GitHub"><LinkIcon /></a>
+          </span>
+          <div className="bf-nav-links">
+            <a href="#how">how it works</a><a href="#payouts">payouts</a><Link href="/rules">rules</Link><Link href="/docs">docs</Link><a href="#accounts">$quantara</a>
+          </div>
+          <Link className="bf-btn bf-btn-accent" href="/app">launch app</Link>
         </div>
       </nav>
 
-      <header className="rf-hero" id="top">
-        <video className="rf-hero-video" muted loop playsInline autoPlay poster="https://frogscan-web.vercel.app/assets/hero-poster.jpg"><source src="https://frogscan-web.vercel.app/assets/hero.mp4" type="video/mp4" /></video>
-        <div className="rf-hero-tone" /><div className="rf-hero-scrim" /><div className="rf-hero-fade" />
-        <div className="rf-wrap rf-hero-inner"><div className="rf-hero-slides">
-          <div className={`rf-hero-slide ${slide === 0 ? "is-active" : ""}`}><span>Trade the trenches,</span><span>not the <b>noise</b></span></div>
-          <div className={`rf-hero-slide ${slide === 1 ? "is-active" : ""}`}><span>Choose, trade and</span><span>prove <b>every run</b></span></div>
-          <div className={`rf-hero-slide ${slide === 2 ? "is-active" : ""}`}><span><b>Unlock</b> your block</span><span>in the arena</span></div>
-        </div></div>
-        <div className="rf-hero-corners"><div className="rf-hero-note"><div>// Quantara</div><p>A fast crypto challenge arena with clean evaluation blocks, visible risk rules, and a terminal built for disciplined traders.</p></div><div className="rf-scroll">Scroll to discover <span>v</span></div></div>
+      <header className="bf-hero" id="top">
+        <div className="bf-glow" />
+        <div className="bf-wrap">
+          <div className="bf-hero-head">
+            <h1>
+              <span className="bf-statline sl1">up to <b>$5k</b> funded blocks</span>
+              <span className="bf-statline sl2"><b>90%</b> profit split</span>
+              <span className="bf-statline sl3 dim">get <b>funded</b> for the trenches</span>
+            </h1>
+            <p className="bf-hero-sub">Pass one evaluation Block on real on-chain execution, then trade on a funded Block to receive payouts. No deposits, no seed-phrase requests, no KYC · ever.</p>
+            <div className="bf-hero-cta"><Link className="bf-btn bf-btn-accent" href="/app">choose your block</Link><Link className="bf-btn bf-btn-outline" href="/app">trade the trenches</Link></div>
+          </div>
+        </div>
       </header>
 
-      <section className="rf-section rf-demo" id="demo"><div className="rf-wrap">
-        <div className="rf-section-head rf-center rf-reveal"><span className="rf-eyebrow">// The app</span><h2>Every trade, in one place.</h2><p>Watch live pairs, open simulated positions, track challenge pressure, and review account progress inside one terminal.</p></div>
-        <div className="rf-video-frame rf-reveal"><div className="rf-app-preview"><iframe src="/app" title="Quantara app preview" tabIndex={-1} /><div className="rf-preview-shield" /></div></div>
-        <div className="rf-video-caption">Recorded in-app / choose - trade - unlock</div>
+      <section id="how" className="bf-section"><div className="bf-wrap">
+        <div className="bf-section-head bf-reveal"><h2>Funded in three steps</h2><p>No jargon, no fine-print traps. This is the whole journey.</p></div>
+        <div className="bf-steps bf-reveal">
+          <article><span>01</span><h3>Pick your Block</h3><p>Choose a Block from $1K to $5K in simulated capital and pay a one-time fee. The fee is all you risk on that Block · optional paid resets exist if you blow it and want the same Block restored.</p><small>~2 min · connect a wallet, add email if you like</small></article>
+          <article><span>02</span><h3>Pass the evaluation</h3><p>Double down or trade smart · hit your profit target before your max loss runs out. You trade live memecoin markets with real on-chain execution: real slippage, real fees.</p><small>30 days to pass · no daily limit</small></article>
+          <article><span>03</span><h3>Get a funded block &amp; paid out</h3><p>After passing your evaluation without breaches, activate it into a funded Block · then follow the funded rules and trade on it to get payouts.</p><small>paid in crypto · no KYC, ever</small></article>
+        </div>
       </div></section>
 
-      <section className="rf-section" id="how"><div className="rf-wrap">
-        <div className="rf-how-intro"><div className="rf-reveal"><span className="rf-eyebrow">// How it works</span><h2>Choose. Trade. Unlock.</h2></div><div className="rf-reveal"><p>Quantara turns a crypto evaluation into one simple loop. Choose a block, trade the market without breaking the visible limits, and unlock the next arena.</p></div></div>
-        <div className="rf-steps">{steps.map((step, index) => <article className="rf-step rf-reveal" style={{ "--rf-delay": `${index * 70}ms` } as CSSProperties} key={step.number}><i className="tl" /><i className="tr" /><i className="bl" /><i className="br" /><span className="rf-step-num">{step.number}</span><div className="rf-step-art"><div className={`rf-mini-terminal state-${index}`}><span>{step.label}</span><div /><div /><div /></div></div><h3>{step.title}</h3><p>{step.copy}</p></article>)}</div>
+      <section id="accounts" className="bf-section"><div className="bf-wrap">
+        <div className="bf-section-head bf-reveal"><h2>Choose your <b>Block</b></h2><p>Every account is a Block. Buy one, beat it, stack the next. One flat fee · no monthly charges. Optional paid resets are priced by how much max loss you used, always shown before you pay.</p></div>
+        <div className="bf-tiers bf-reveal">
+          <div className="bf-tier-row head"><span>block</span><span>profit target</span><span>max loss</span><span>split</span><span /></div>
+          {tiers.map((tier) => <div className={`bf-tier-row ${tier.hot ? "hot" : ""}`} key={tier.size}><span className="size">{tier.size}<small>{tier.note}</small></span><span className="cell" data-label="profit target">{tier.target}</span><span className="cell" data-label="max loss">{tier.loss}</span><span className="cell highlight" data-label="split">{tier.split}</span><span className="buy"><Link className={`bf-btn ${tier.hot ? "bf-btn-accent" : "bf-btn-ghost"}`} href="/app">{tier.price}</Link></span></div>)}
+        </div>
+        <p className="bf-tiers-note bf-reveal">Targets are high because the trenches are high · hit the target before your max loss and the account is yours. You get 30 days to pass an evaluation, and there are no daily limits. Funded Blocks have no clock.<br />A one-time <b>$50 lifetime activation fee</b> applies when your funded account is activated · never recurring. Consistent traders scale their Block to <b>$25k</b> after payouts.</p>
       </div></section>
 
-      <section className="rf-section rf-ecosystem" id="ecosystem"><div className="rf-wrap rf-eco-grid">
-        <div className="rf-eco-copy rf-reveal"><span className="rf-eyebrow">// Ecosystem</span><h2>Built for the market you already trade in</h2><p>Quantara wraps familiar crypto rails into a focused evaluation experience: real pairs, wallet access, transparent limits, journaled positions, and reviewable challenge history.</p></div>
-        <div className="rf-eco-cells">{["Solana", "Ethereum", "BNB Chain", "Base", "Phantom", "MetaMask", "TradingView", "Quantara"].map((name, index) => <div className="rf-eco-cell rf-reveal" style={{ "--rf-delay": `${index * 60}ms` } as CSSProperties} key={name}><span>{name}</span></div>)}</div>
+      <section className="bf-section"><div className="bf-wrap">
+        <div className="bf-section-head bf-reveal"><h2>Why traders switch</h2><p>Same $5,000 of buying power. Very different downside.</p></div>
+        <div className="bf-compare bf-reveal">
+          <article><h3>your own money</h3><p>$5,000 of your savings</p><ul><li className="no"><b>×</b>Every loss comes out of your pocket</li><li className="no"><b>×</b>One bad rug can wipe months of gains</li><li className="no"><b>×</b>Wallets, bridges, and gas to manage</li><li className="no"><b>×</b>No structure, no risk guardrails</li></ul></article>
+          <article className="win"><h3>Quantara $5k block</h3><p>$5,000 account · $249 eval</p><ul><li className="yes"><b>✓</b>Max possible loss: the $249 fee</li><li className="yes"><b>✓</b>Keep 90% of the upside</li><li className="yes"><b>✓</b>Email login · zero wallet setup</li><li className="yes"><b>✓</b>Built-in risk rules keep you disciplined</li></ul></article>
+        </div>
       </div></section>
 
-      <section className="rf-section" id="blocks"><div className="rf-wrap">
-        <div className="rf-section-head rf-center rf-reveal"><span className="rf-eyebrow">// Blocks</span><h2>The Quantara challenge blocks</h2><p>Choose the pressure level that matches your discipline, then grow the simulated account without breaking its risk rules.</p></div>
-        <div className="rf-launch rf-reveal"><div className="rf-orbit" aria-hidden="true"><div className="rf-sweep" /><div className="rf-ring" /><div className="rf-ring second" /><div className="rf-core">Q</div><div className="rf-satellite one"><b>25</b></div><div className="rf-satellite two"><b>100</b></div><div className="rf-satellite three"><b>250</b></div></div><div className="rf-block-list"><div className="rf-list-head"><b>Challenge blocks</b><span><i /> Live</span></div>{blocks.map((block) => <article className="rf-block-row" key={block.name}><span className="rf-block-mark">{block.mark}</span><span><b>{block.name}</b><small>{block.meta}</small></span><span className="rf-block-stat"><b>{block.target}</b><small>Target</small></span><Link href="/app">Start</Link></article>)}</div></div>
-        <div className="rf-center-button rf-reveal"><Button href="/app">Launch the app</Button></div>
+      <section id="payouts" className="bf-section"><div className="bf-wrap">
+        <div className="bf-section-head bf-reveal"><h2>Every payout is a public transaction</h2><p>We pay in crypto, which means every payout comes with an on-chain receipt anyone can verify. No screenshots, no trust-me · just the chain.</p></div>
+        <div className="bf-payout-wall bf-reveal"><div className="bf-payout-head"><span>trader</span><span>payout</span><span>network</span><span>receipt</span></div><div className="bf-payout-empty"><b>No payouts yet · but funded Blocks are active.</b><span>The moment the first funded trader gets paid, their transaction hash appears here and you can verify it on-chain yourself. We would rather show an empty wall than invent one.</span></div></div>
+        <div className="bf-section-head bf-reveal treasury-head"><h2>Live <b>Treasury Funds</b></h2><p>Payouts are backed by USDC held in the treasury wallet. The balance below is visible and can be verified on-chain.</p></div>
+        <div className="bf-treasury bf-reveal"><div className="live"><i /> Live · USDC treasury</div><div className="amount">$10,000<span>USDC</span></div><p>Connected to the Quantara USDC treasury · verifiable on-chain</p><div className="wallet"><span>Wallet</span><b>QUANTARA_TREASURY_WALLET</b></div><a className="bf-btn bf-btn-outline" href="#payouts">Verify on-chain ↗</a></div>
       </div></section>
 
-      <section className="rf-section"><div className="rf-wrap">
-        <div className="rf-section-head rf-center rf-reveal"><span className="rf-eyebrow">// Why Quantara</span><h2>Real rules, clean pressure</h2><p>The account state stays readable, the limits stay visible, and every result comes from the trades inside the run.</p></div>
-        <div className="rf-steps rf-benefits">{benefits.map((benefit) => <article className="rf-step rf-reveal" key={benefit.number}><i className="tl" /><i className="tr" /><i className="bl" /><i className="br" /><span className="rf-step-num">{benefit.number}</span><div className="rf-benefit-art"><span>{benefit.mark}</span></div><h3>{benefit.title}</h3><p>{benefit.copy}</p></article>)}</div>
-      </div></section>
+      <div className="bf-final"><div className="bf-glow" /><div className="bf-wrap"><p>your skill.<br /><b>your funded Block.</b></p><Link className="bf-btn bf-btn-accent" href="/app">get your block</Link></div></div>
 
-      <section className="rf-community" id="community"><div className="rf-community-track">
-        <div className="rf-market-column left">{marketLeft.map(([pair, volume, change]) => <div className="rf-market-card" key={pair}><span>{pair.charAt(0)}</span><div><b>{pair}</b><small>{volume}</small></div><strong className={change.startsWith("-") ? "down" : ""}>{change}</strong></div>)}</div>
-        <div className="rf-market-column right">{marketRight.map(([pair, volume, change]) => <div className="rf-market-card" key={pair}><span>{pair.charAt(0)}</span><div><b>{pair}</b><small>{volume}</small></div><strong className={change.startsWith("-") ? "down" : ""}>{change}</strong></div>)}</div>
-        <div className="rf-community-copy rf-reveal"><span className="rf-eyebrow">[ Enter the arena ]</span><h2>Choose a block and trade on Quantara.</h2><p>Open the terminal, start an evaluation, and prove the run with every target and risk limit visible.</p><div><Button href="/app">Launch App</Button><Button href="/docs" ghost>Read Docs</Button></div></div>
-      </div></section>
-
-      <footer className="rf-footer"><div className="rf-wrap">
-        <div className="rf-footer-top"><h2>The crypto challenge arena.</h2><div className="rf-footer-links"><a href="#blocks">Blocks</a><a href="https://x.com">X / Twitter</a><a href="#demo">The app</a><a href="#community">Community</a><a href="#how">How it works</a><Link href="/app">Launch App</Link><a href="#ecosystem">Ecosystem</a><Link href="/docs">Docs</Link></div></div>
-        <div className="rf-footer-bottom"><div className="rf-footer-brand"><span>Q</span>Quantara</div><div>© Quantara 2026<br /><a href="#">Terms</a> // <a href="#">Privacy</a></div></div>
-        <p className="rf-disclaimer">Quantara is a simulated crypto evaluation platform. Trading involves market risk. Nothing on this site is financial advice.</p>
+      <footer className="bf-footer"><div className="bf-wrap">
+        <div className="bf-footer-in"><Link className="bf-logo" href="#top"><Logo /><span>quantara<span className="bf-cursor" /></span></Link><div><a href="#how">how it works</a><a href="#payouts">payouts</a><Link href="/rules">rules</Link><a href="#accounts">$quantara</a><Link href="/legal">terms</Link><Link href="/legal">privacy</Link></div></div>
+        <p>Quantara provides access to simulated trading evaluations and funded simulated accounts. All trading occurs in a simulated environment using real market data. Quantara is not a broker-dealer, investment advisor, or exchange, and nothing on this site is financial advice. Trading involves substantial risk of loss. Evaluation fees are non-refundable except as described in our Terms.</p>
       </div></footer>
+
+      <div className="bf-mobile-cta"><Link className="bf-btn bf-btn-accent" href="/app">get your block · from $99</Link></div>
     </main>
   );
 }
