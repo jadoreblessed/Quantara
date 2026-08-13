@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { QuantaraMark } from "@/components/quantara-mark";
 
 const tiers = [
   { size: "$1,000", note: "evaluation block", target: "$2,000", loss: "$800", split: "90%", price: "$99 · start" },
@@ -10,20 +9,8 @@ const tiers = [
   { size: "$5,000", note: "evaluation block", target: "$5,000", loss: "$4,000", split: "90%", price: "$249 · start" },
 ];
 
-function Logo() {
-  return (
-    <span className="bf-logo-mark" aria-hidden="true">
-      <QuantaraMark />
-    </span>
-  );
-}
-
 function XIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>;
-}
-
-function DiscordIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.93-1.51 13.78 13.78 0 0 0-.64 1.28 18.27 18.27 0 0 0-5.5 0 12.64 12.64 0 0 0-.64-1.28c-1.71.29-3.37.8-4.93 1.51A20.26 20.26 0 0 0 .1 18.06a19.9 19.9 0 0 0 6.07 3.03c.49-.66.93-1.37 1.3-2.1a12.9 12.9 0 0 1-2.05-.98l.5-.38a14.2 14.2 0 0 0 12.16 0l.5.38c-.65.39-1.34.72-2.05.98.38.74.81 1.44 1.3 2.1a19.84 19.84 0 0 0 6.07-3.03 20.2 20.2 0 0 0-2.58-13.69ZM8.01 15.33c-1.18 0-2.16-1.08-2.16-2.42s.95-2.42 2.16-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Zm7.98 0c-1.18 0-2.15-1.08-2.15-2.42s.95-2.42 2.15-2.42 2.18 1.09 2.16 2.42c0 1.34-.95 2.42-2.16 2.42Z" /></svg>;
 }
 
 function LinkIcon() {
@@ -46,6 +33,13 @@ export default function Home() {
     <main className="bf-home">
       <link rel="stylesheet" href="https://myblockfirm.com/fonts/fonts.css" />
 
+      <div className="bf-atmosphere" aria-hidden="true">
+        <span className="bf-aurora bf-aurora-one" />
+        <span className="bf-aurora bf-aurora-two" />
+        <span className="bf-market-grid" />
+        <span className="bf-scanline" />
+      </div>
+
       {announcement && (
         <div className="bf-announcement">
           <span>Code <b>EARLY</b> for <b>50% off</b> ANY evaluation Block · ending soon</span>
@@ -55,10 +49,9 @@ export default function Home() {
 
       <nav className="bf-nav">
         <div className="bf-wrap bf-nav-in">
-          <Link className="bf-logo" href="#top"><Logo /><span>quantara<span className="bf-cursor" /></span></Link>
+          <Link className="bf-logo" href="#top"><span>quantara<span className="bf-cursor" /></span></Link>
           <span className="bf-socials">
             <a href="https://x.com" target="_blank" rel="noreferrer" aria-label="X / Twitter"><XIcon /></a>
-            <a href="https://discord.gg/QaFXA67QP" target="_blank" rel="noreferrer" aria-label="Discord"><DiscordIcon /></a>
             <a href="https://github.com/jadoreblessed/Quantara" target="_blank" rel="noreferrer" aria-label="GitHub"><LinkIcon /></a>
           </span>
           <div className="bf-nav-links">
@@ -73,12 +66,12 @@ export default function Home() {
         <div className="bf-wrap">
           <div className="bf-hero-head">
             <h1>
-              <span className="bf-statline sl1">up to <b>$5k</b> funded blocks</span>
-              <span className="bf-statline sl2"><b>90%</b> profit split</span>
-              <span className="bf-statline sl3 dim">get <b>funded</b> for the trenches</span>
+              <span className="bf-statline sl1">prove your edge in <b>live markets</b></span>
+              <span className="bf-statline sl2">unlock up to <b>$5k</b> in buying power</span>
+              <span className="bf-statline sl3 dim">keep <b>90%</b> when your strategy delivers</span>
             </h1>
-            <p className="bf-hero-sub">Pass one evaluation Block on real on-chain execution, then trade on a funded Block to receive payouts. No deposits, no seed-phrase requests, no KYC · ever.</p>
-            <div className="bf-hero-cta"><Link className="bf-btn bf-btn-accent" href="/app">choose your block</Link><Link className="bf-btn bf-btn-outline" href="/app">trade the trenches</Link></div>
+            <p className="bf-hero-sub">Trade a rules-based simulation priced from live on-chain markets. Clear the evaluation, unlock a funded Block, and qualify for crypto payouts · without deposits, seed phrases, or KYC.</p>
+            <div className="bf-hero-cta"><Link className="bf-btn bf-btn-accent" href="/app">find your block</Link><Link className="bf-btn bf-btn-outline" href="/app">open the terminal</Link></div>
           </div>
         </div>
       </header>
@@ -119,7 +112,7 @@ export default function Home() {
       <div className="bf-final"><div className="bf-glow" /><div className="bf-wrap"><p>your skill.<br /><b>your funded Block.</b></p><Link className="bf-btn bf-btn-accent" href="/app">get your block</Link></div></div>
 
       <footer className="bf-footer"><div className="bf-wrap">
-        <div className="bf-footer-in"><Link className="bf-logo" href="#top"><Logo /><span>quantara<span className="bf-cursor" /></span></Link><div><a href="#how">how it works</a><a href="#payouts">payouts</a><Link href="/rules">rules</Link><a href="#accounts">$quantara</a><Link href="/legal">terms</Link><Link href="/legal">privacy</Link></div></div>
+        <div className="bf-footer-in"><Link className="bf-logo" href="#top"><span>quantara<span className="bf-cursor" /></span></Link><div><a href="#how">how it works</a><a href="#payouts">payouts</a><Link href="/rules">rules</Link><a href="#accounts">$quantara</a><Link href="/legal">terms</Link><Link href="/legal">privacy</Link></div></div>
         <p>Quantara provides access to simulated trading evaluations and funded simulated accounts. All trading occurs in a simulated environment using real market data. Quantara is not a broker-dealer, investment advisor, or exchange, and nothing on this site is financial advice. Trading involves substantial risk of loss. Evaluation fees are non-refundable except as described in our Terms.</p>
       </div></footer>
 
