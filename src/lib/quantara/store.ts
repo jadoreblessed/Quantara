@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
-import { blockTiers, getBlockTier, getToken, tokens, treasury } from "./data";
-import type { AppSnapshot, OrderSide, PortfolioSnapshot, RiskSnapshot, Trade, UserSession } from "./types";
+import { blockTiers, getBlockTier, getTapeTrades, getToken, getTokenDetail, searchTokens, tokens, treasury } from "./data";
+import type { AppSnapshot, OrderSide, PortfolioSnapshot, RiskSnapshot, Trade, UserSession, WalletAccount } from "./types";
 
 const SESSION_COOKIE = "quantara_session";
 
-type StoredSession = UserSession & PortfolioSnapshot & { favorites: string[] };
+type StoredSession = UserSession & PortfolioSnapshot & { favorites: string[]; wallets: WalletAccount[] };
 type MemoryStore = Map<string, StoredSession>;
 
 const globalStore = globalThis as typeof globalThis & { quantaraStore?: MemoryStore };
@@ -52,6 +52,10 @@ export async function createSession(email?: string, provider?: string) {
     email,
     createdAt: new Date().toISOString(),
     favorites: [],
+    wallets: [
+      { chain: "solana", address: "QuantaraSolDemo11111111111111111111111111", label: "Solana demo", attachedAt: new Date().toISOString() },
+      { chain: "evm", address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", label: "EVM demo", attachedAt: new Date().toISOString() },
+    ],
     ...defaultPortfolio(),
   };
   store.set(id, session);
@@ -97,6 +101,7 @@ export async function getSnapshot(): Promise<AppSnapshot> {
   const risk = calculateRisk(session);
   return {
     session: publicSession(session),
+    wallets: session?.wallets ?? [],
     tokens,
     blockTiers,
     favorites: session?.favorites ?? [],
@@ -121,7 +126,48 @@ export async function getPortfolio() {
 }
 
 export function getMarkets() {
-  return { tokens, blockTiers };
+  return { tokens, blockTiers, migrated: tokens.filter((token) => token.liqUsd >= 15000), almost: tokens.filter((token) => token.liqUsd < 15000) };
+}
+
+export function getSearchResults(query: string) {
+  return { results: searchTokens(query).slice(0, 24) };
+}
+
+export function getTokenRoute(identifier: string) {
+  const detail = getTokenDetail(identifier);
+  if (!detail) throw new Error("TOKEN_NOT_FOUND");
+  return detail;
+}
+
+export function getSafetyRoute(identifier: string) {
+  const detail = getTokenDetail(identifier);
+  if (!detail) throw new Error("TOKEN_NOT_FOUND");
+  return detail.safety;
+}
+
+export async function getSessionAccount() {
+  const session = await getCurrentSession();
+  return {
+    session: publicSession(session),
+    wallets: session?.wallets ?? [],
+    favorites: session?.favorites ?? [],
+  };
+}
+
+export async function attachWallet(input: { chain: WalletAccount["chain"]; address: string; label?: string }) {
+  const session = await getCurrentSession();
+  if (!session) throw new Error("AUTH_REQUIRED");
+  if (input.chain !== "solana" && input.chain !== "evm") throw new Error("INVALID_CHAIN");
+  const address = input.address.trim();
+  if (address.length < 12) throw new Error("INVALID_WALLET");
+  const wallet: WalletAccount = {
+    chain: input.chain,
+    address,
+    label: input.label?.trim() || (input.chain === "solana" ? "Solana wallet" : "EVM wallet"),
+    attachedAt: new Date().toISOString(),
+  };
+  session.wallets = [wallet, ...session.wallets.filter((item) => item.address.toLowerCase() !== address.toLowerCase())].slice(0, 8);
+  return getSessionAccount();
 }
 
 export function getTreasury() {
@@ -157,6 +203,28 @@ export async function setFavorite(ticker: string, favorite: boolean) {
   else favorites.delete(token.ticker);
   session.favorites = [...favorites];
   return getSnapshot();
+}
+
+export async function getMyFills(identifier?: string) {
+  const session = await getCurrentSession();
+  const ownFills = (session?.trades ?? []).flatMap((trade) => {
+    const token = getToken(trade.ticker);
+    if (!token) return [];
+    return [{
+      id: `own-${trade.id}`,
+      token: token.token,
+      ticker: token.ticker,
+      wallet: session?.wallets[0]?.address ?? "session-wallet",
+      side: trade.side,
+      usd: trade.total,
+      priceUsd: trade.price,
+      quantity: trade.quantity,
+      ageSec: 1,
+      tx: `${token.network}_${trade.id}`,
+    }];
+  });
+  const marketFills = identifier ? getTapeTrades(identifier) : tokens.flatMap((token) => getTapeTrades(token.ticker).slice(0, 4));
+  return { fills: [...ownFills, ...marketFills].slice(0, 80) };
 }
 
 export async function logout() {
@@ -207,6 +275,12 @@ export async function executeOrder(input: { ticker: string; side: OrderSide; amo
   };
   session.trades = [trade, ...session.trades].slice(0, 80);
   return getSnapshot();
+}
+
+export async function executeTrade(input: { token: string; side: OrderSide; amount: number }) {
+  const token = getToken(input.token);
+  if (!token) throw new Error("TOKEN_NOT_FOUND");
+  return executeOrder({ ticker: token.ticker, side: input.side, amount: input.amount });
 }
 
 export function formatBackendError(error: unknown) {
