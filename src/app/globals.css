@@ -50,8 +50,8 @@
 .bf-wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
 .bf-btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 14px 26px; border: 0; border-radius: 10px; font-family: "Instrument Sans", var(--font-geist-sans), sans-serif; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; transition: transform .15s,box-shadow .15s,border-color .15s,background .15s,color .15s; }
-.bf-btn-accent { color: #101a06; background: var(--bf-accent); }
-.bf-btn-accent:hover { background: var(--bf-accent-hot); box-shadow: 0 12px 34px -8px rgba(183,255,99,.5); transform: translateY(-1px); }
+.bf-btn-accent { color: #071005 !important; background: #91cf48; box-shadow: inset 0 0 0 1px rgba(217,255,174,.16); }
+.bf-btn-accent:hover { background: #a3df57; box-shadow: 0 12px 30px -10px rgba(145,207,72,.38); transform: translateY(-1px); }
 .bf-btn-accent:active { box-shadow: none; transform: translateY(1px); }
 .bf-btn-ghost { color: var(--bf-mute); border: 1px solid var(--bf-edge); background: transparent; }
 .bf-btn-ghost:hover { color: var(--bf-text); border-color: rgba(150,168,200,.34); }
@@ -66,9 +66,10 @@
 .bf-nav-in { display: flex; align-items: center; justify-content: space-between; height: 64px; }
 .bf-logo { display: inline-flex; align-items: center; gap: 10px; font-family: "IBM Plex Mono",var(--font-geist-mono),monospace; font-size: 17px; font-weight: 600; letter-spacing: .01em; }
 .bf-logo-mark, .bf-logo-mark svg { display: block; width: 22px; height: 22px; flex: none; }
-.bf-logo-mark svg > rect { fill: var(--bf-accent); stroke: none; }
-.bf-logo-mark svg g { fill: none; stroke: var(--bf-ink); }
-.bf-logo-mark svg g rect, .bf-logo-mark svg g line { stroke-width: 7; stroke-linecap: round; }
+.quantara-mark-bg { fill: var(--bf-accent, var(--gold)); }
+.quantara-mark-ring, .quantara-mark-cut, .quantara-mark-signal { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.quantara-mark-ring, .quantara-mark-cut { stroke: #071005; stroke-width: 6.5; }
+.quantara-mark-signal { stroke: var(--cyan); stroke-width: 5; }
 .bf-cursor { display: inline-block; width: 9px; height: 19px; margin-left: 2px; vertical-align: -3px; background: var(--bf-accent); animation: bf-blink 1.15s steps(1) infinite; }
 @keyframes bf-blink { 50% { opacity: 0; } }
 .bf-socials { display: inline-flex; align-items: center; gap: 10px; margin-right: auto; margin-left: 14px; color: var(--bf-accent); }
@@ -1695,22 +1696,22 @@ svg {
   min-height: 100vh;
   padding-bottom: 36px;
   color: #e9eef8;
-  background:
-    radial-gradient(circle at 15% 0%, rgba(255,192,68,.12), transparent 32rem),
-    radial-gradient(circle at 78% 4%, rgba(120,165,255,.1), transparent 30rem),
-    #070a0f;
+  background: #05080d;
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 .discord-strip {
   position: relative;
-  min-height: 46px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 8px 48px;
+  padding: 6px 48px;
   color: #080808;
   background: #ffc550;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -1730,10 +1731,10 @@ svg {
 .app-chrome {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 22px;
+  gap: 16px;
   align-items: center;
-  min-height: 82px;
-  padding: 14px 30px;
+  min-height: 66px;
+  padding: 9px 28px;
   border-bottom: 1px solid #1b2433;
   background: rgba(6, 9, 14, .9);
 }
@@ -1741,31 +1742,28 @@ svg {
 .app-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   color: white;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 900;
   letter-spacing: -.04em;
 }
 
-.app-brand span {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border-radius: 9px;
-  color: #06080c;
-  background: var(--gold);
+.app-brand-mark {
+  display: block;
+  width: 27px;
+  height: 27px;
+  flex: none;
 }
 
 .app-brand b::after {
   content: "";
   display: inline-block;
-  width: 11px;
-  height: 28px;
-  margin-left: 5px;
-  vertical-align: -5px;
+  width: 7px;
+  height: 20px;
+  margin-left: 4px;
+  vertical-align: -4px;
   background: var(--gold);
   animation: cursor-blink 1.1s steps(2) infinite;
 }
@@ -1786,16 +1784,17 @@ svg {
 .icon-button,
 .buy-size,
 .login-button {
-  min-height: 40px;
+  min-height: 38px;
   border: 1px solid #223048;
   border-radius: 12px;
   color: #d6dce8;
   background: #101724;
   font-weight: 850;
+  font-size: 13px;
 }
 
 .app-chrome nav button {
-  padding: 0 22px;
+  padding: 0 18px;
 }
 
 .app-chrome nav button.active,
@@ -1812,13 +1811,13 @@ svg {
 .status-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
-  padding: 0 14px;
+  min-height: 30px;
+  padding: 0 12px;
   border: 1px solid rgba(255,102,117,.35);
   border-radius: 10px;
   color: #ff858f;
   background: rgba(255,102,117,.08);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 950;
   text-transform: uppercase;
 }
@@ -1826,26 +1825,27 @@ svg {
 .start-block,
 .login-button,
 .create-account {
-  min-height: 46px;
-  padding: 0 22px;
+  min-height: 40px;
+  padding: 0 18px;
   border: 0;
   border-radius: 13px;
   color: #08090b;
   background: var(--gold);
   font-weight: 950;
+  font-size: 13px;
 }
 
 .icon-button {
-  width: 46px;
+  width: 40px;
   color: #9faabd;
 }
 
 .login-button {
-  min-width: 150px;
+  min-width: 138px;
 }
 
 .app-body {
-  padding: 28px 32px 0;
+  padding: 24px 30px 0;
 }
 
 .market-toolbar {
@@ -1856,7 +1856,7 @@ svg {
 
 .market-toolbar h1 {
   margin: 0 8px 0 0;
-  font-size: 23px;
+  font-size: 18px;
 }
 
 .chain-tabs {
@@ -1865,14 +1865,14 @@ svg {
 }
 
 .chain-tabs button {
-  min-width: 104px;
-  min-height: 48px;
-  padding: 0 20px;
+  min-width: 96px;
+  min-height: 42px;
+  padding: 0 18px;
   border: 1px solid #202b40;
   border-radius: 13px;
   color: #d9e0eb;
   background: #101724;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 950;
 }
 
@@ -1915,7 +1915,7 @@ svg {
   width: min(1376px, calc(100vw - 64px));
   margin: 14px auto 0;
   border: 1px solid #202b3e;
-  border-radius: 18px;
+  border-radius: 14px;
   background: rgba(12, 17, 25, .86);
   box-shadow: 0 28px 80px rgba(0,0,0,.34);
   overflow: hidden;
@@ -1926,8 +1926,8 @@ svg {
   grid-template-columns: 1fr minmax(300px, 450px) auto;
   gap: 18px;
   align-items: center;
-  min-height: 64px;
-  padding: 12px 16px;
+  min-height: 56px;
+  padding: 9px 16px;
   border-bottom: 1px solid #1c2638;
 }
 
@@ -1995,11 +1995,11 @@ svg {
 .token-row {
   position: relative;
   display: grid;
-  grid-template-columns: 56px 1fr 160px 88px;
-  gap: 16px;
+  grid-template-columns: 50px 1fr 150px 82px;
+  gap: 14px;
   align-items: center;
-  min-height: 90px;
-  padding: 10px 14px;
+  min-height: 72px;
+  padding: 7px 14px;
   border-bottom: 1px solid rgba(255,255,255,.055);
   transition: background .16s ease, transform .16s ease;
 }
@@ -2019,12 +2019,12 @@ svg {
 }
 
 .token-avatar {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   border: 2px solid #25324b;
-  border-radius: 14px;
+  border-radius: 12px;
   color: white;
   background: linear-gradient(135deg, #16385f, #f0b846);
   font-weight: 950;
@@ -2046,7 +2046,7 @@ svg {
 
 .token-main b {
   color: white;
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .token-main span,
@@ -2055,9 +2055,9 @@ svg {
 }
 
 .token-main p {
-  margin: 4px 0 6px;
+  margin: 2px 0 4px;
   color: var(--green);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 850;
 }
 
@@ -2067,12 +2067,12 @@ svg {
 }
 
 .token-tags span {
-  padding: 3px 8px;
+  padding: 2px 7px;
   border: 1px solid #26344d;
   border-radius: 6px;
   color: #7d899c;
   background: #0f1622;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .token-tags span:first-child {
@@ -2095,7 +2095,7 @@ svg {
 
 .token-metrics b {
   color: #eef3fb;
-  font-size: 20px;
+  font-size: 17px;
 }
 
 .token-metrics em {
@@ -2108,12 +2108,13 @@ svg {
 .negative { color: var(--red); }
 
 .buy-token {
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid #26344d;
   border-radius: 12px;
   color: #b5c2dc;
   background: #121a27;
   font-weight: 950;
+  font-size: 13px;
 }
 
 .buy-token:not(.locked)::first-letter {
@@ -2133,13 +2134,13 @@ svg {
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 22px;
-  min-height: 36px;
+  gap: 20px;
+  min-height: 32px;
   padding: 0 20px;
   border-top: 1px solid #1c2638;
   color: #78869d;
   background: rgba(7, 10, 15, .94);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .app-status i {

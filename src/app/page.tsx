@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { QuantaraMark } from "@/components/quantara-mark";
 
 const tiers = [
   { size: "$1,000", note: "evaluation block", target: "$2,000", loss: "$800", split: "90%", price: "$99 · start" },
@@ -12,14 +13,7 @@ const tiers = [
 function Logo() {
   return (
     <span className="bf-logo-mark" aria-hidden="true">
-      <svg viewBox="0 0 72 72">
-        <rect width="72" height="72" rx="17" />
-        <g transform="translate(36,36) rotate(-45)">
-          <rect x="-27" y="-9" width="24" height="18" rx="9" />
-          <rect x="3" y="-9" width="24" height="18" rx="9" />
-          <line x1="-9" y1="0" x2="9" y2="0" />
-        </g>
-      </svg>
+      <QuantaraMark />
     </span>
   );
 }

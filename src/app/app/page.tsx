@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { QuantaraMark } from "@/components/quantara-mark";
 
 type Token = {
   ticker: string;
@@ -54,7 +55,7 @@ export default function AppPage() {
 
       <header className="app-chrome">
         <Link className="app-brand" href="/">
-          <span>↯</span>
+          <QuantaraMark className="app-brand-mark" />
           <b>quantara</b>
         </Link>
         <nav aria-label="App navigation">
