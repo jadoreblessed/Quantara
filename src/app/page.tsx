@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { LiquidCandles } from "@/components/liquid-candles";
 
 const tiers = [
   { size: "$1,000", note: "evaluation block", target: "$2,000", loss: "$800", split: "90%", price: "$99 · start" },
@@ -62,6 +63,7 @@ export default function Home() {
       </nav>
 
       <header className="bf-hero" id="top">
+        <LiquidCandles />
         <div className="bf-glow" />
         <div className="bf-wrap">
           <div className="bf-hero-head">

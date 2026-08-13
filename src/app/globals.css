@@ -92,8 +92,11 @@
 .bf-nav-links a { transition: color .15s; }.bf-nav-links a:hover { color: var(--bf-text); }
 .bf-nav .bf-btn { padding: 9px 18px; font-size: 13px; }
 
-.bf-hero { position: relative; overflow: hidden; padding: 110px 0 0; }
+.bf-hero { position: relative; display: flex; min-height: min(760px,calc(100svh - 104px)); align-items: center; overflow: hidden; padding: 100px 0 90px; }
+.bf-hero::before { content: ""; position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg,rgba(5,7,11,.18),rgba(5,7,11,.02) 52%,rgba(5,7,11,.2)),linear-gradient(180deg,transparent 65%,var(--bf-ink)); pointer-events: none; }
+.bf-liquid-candles { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; opacity: .9; pointer-events: none; }
 .bf-glow { position: absolute; width: 820px; height: 820px; top: -430px; left: 50%; background: radial-gradient(circle,rgba(183,255,99,.1),transparent 60%); transform: translateX(-50%); pointer-events: none; }
+.bf-hero > .bf-wrap { position: relative; z-index: 2; width: 100%; }
 .bf-hero-head { position: relative; max-width: 760px; }
 .bf-hero-head h1 { display: contents; }
 .bf-statline { display: block; color: var(--bf-text); font-family: "Instrument Sans",var(--font-geist-sans),sans-serif; font-size: clamp(26px,4.6vw,48px); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.28; letter-spacing: -.022em; opacity: 0; transform: translateY(14px); animation: bf-rise .6s ease forwards; }
@@ -150,7 +153,8 @@
   .bf-announcement { padding: 8px 38px; font-size: 11.5px; }
   .bf-socials { gap: 7px; }.bf-socials a { width: 29px; height: 29px; }.bf-socials a:last-child { display: none; }
   .bf-nav .bf-btn { padding: 9px 12px; }
-  .bf-hero { padding-top: 82px; }.bf-hero-sub { font-size: 16px; }
+  .bf-hero { min-height: 650px; padding: 78px 0 70px; }.bf-hero-sub { font-size: 16px; }
+  .bf-liquid-candles { opacity: .65; }
   .bf-treasury .amount { font-size: 40px; }
   .bf-payout-head { display: none; }
   .bf-aurora { width: 110vw; filter: blur(70px); opacity: .09; }
