@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { LiquidCandles } from "@/components/liquid-candles";
 
@@ -23,6 +24,25 @@ const systemRows = [
   { key: "RULESET", value: "30D / NO DAILY LIMIT" },
   { key: "SPLIT", value: "90% TRADER" },
   { key: "TREASURY", value: "$10,000 USDC" },
+];
+
+const flowCommands = [
+  { cmd: "quantara.buy_block --size 3000", result: "block_003 minted · rules attached" },
+  { cmd: "risk_engine.arm --max-loss 2400", result: "guardrails online · breach monitor active" },
+  { cmd: "evaluation.start --days 30", result: "live market feed linked · no daily limit" },
+  { cmd: "funded_block.unlock", result: "payout rail prepared · split set to 90%" },
+];
+
+const simulatorStats = [
+  { label: "Account", value: "$5,000", hint: "evaluation block" },
+  { label: "Target", value: "$10,000", hint: "42% complete" },
+  { label: "Max loss", value: "$4,000", hint: "no breach" },
+];
+
+const payoutGhosts = [
+  { trader: "Trader #001", payout: "Awaiting", network: "BNB Chain", receipt: "pending first public receipt" },
+  { trader: "Trader #002", payout: "Queued slot", network: "BNB Chain", receipt: "auto-publishes on payout" },
+  { trader: "Trader #003", payout: "Locked", network: "BNB Chain", receipt: "no invented hashes" },
 ];
 
 function XIcon() {
@@ -92,6 +112,12 @@ export default function Home() {
         <span className="bf-aurora bf-aurora-one" />
         <span className="bf-aurora bf-aurora-two" />
         <span className="bf-market-grid" />
+        <span className="bf-circuit-grid" />
+        <span className="bf-market-pulse" />
+        <span className="bf-float-chip chip-one">RISK OK</span>
+        <span className="bf-float-chip chip-two">BNB SYNC</span>
+        <span className="bf-float-chip chip-three">BLOCK #024</span>
+        <span className="bf-float-chip chip-four">90% SPLIT</span>
         <span className="bf-scanline" />
       </div>
 
@@ -154,22 +180,57 @@ export default function Home() {
         </div>
       </header>
 
-      <section id="how" className="bf-section"><div className="bf-wrap">
-        <div className="bf-section-head bf-reveal"><h2>Funded in three steps</h2><p>No jargon, no fine-print traps. This is the whole journey.</p></div>
-        <div className="bf-steps bf-reveal">
-          <article><span>01</span><h3>Pick your Block</h3><p>Choose a Block from $1K to $5K in simulated capital and pay a one-time fee. The fee is all you risk on that Block · optional paid resets exist if you blow it and want the same Block restored.</p><small>~2 min · connect a wallet, add email if you like</small></article>
-          <article><span>02</span><h3>Pass the evaluation</h3><p>Double down or trade smart · hit your profit target before your max loss runs out. You trade live memecoin markets with real on-chain execution: real slippage, real fees.</p><small>30 days to pass · no daily limit</small></article>
-          <article><span>03</span><h3>Get a funded block &amp; paid out</h3><p>After passing your evaluation without breaches, activate it into a funded Block · then follow the funded rules and trade on it to get payouts.</p><small>paid in crypto · no KYC, ever</small></article>
+      <section id="how" className="bf-section bf-flow-section"><div className="bf-wrap">
+        <div className="bf-section-head bf-reveal"><span className="bf-kicker">Terminal flow</span><h2>Funded in three commands.</h2><p>The journey now reads like a live system: pick a Block, arm risk rules, pass the evaluation, then unlock the funded rail.</p></div>
+        <div className="bf-terminal-flow bf-reveal">
+          <div className="bf-flow-console">
+            <div className="bf-console-bar"><span /><span /><span /><b>quantara://block-os</b></div>
+            <div className="bf-console-lines">
+              {flowCommands.map((line, index) => <div key={line.cmd} style={{ "--line": index } as CSSProperties}>
+                <code><em>$</em> {line.cmd}</code>
+                <small>{line.result}</small>
+              </div>)}
+            </div>
+          </div>
+          <div className="bf-flow-steps">
+            <article><span>01</span><h3>Pick your Block</h3><p>Choose simulated capital from $1K to $5K and start with one flat fee.</p><small>~2 min · no seed phrase</small></article>
+            <article><span>02</span><h3>Pass the evaluation</h3><p>Hit target before max loss. Real market feel, structured downside.</p><small>30 days · no daily limit</small></article>
+            <article><span>03</span><h3>Unlock funded mode</h3><p>Activate the funded Block, follow rules, and qualify for crypto payouts.</p><small>90% split · treasury backed</small></article>
+          </div>
         </div>
       </div></section>
 
-      <section id="accounts" className="bf-section"><div className="bf-wrap">
-        <div className="bf-section-head bf-reveal"><h2>Choose your <b>Block</b></h2><p>Every account is a Block. Buy one, beat it, stack the next. One flat fee · no monthly charges. Optional paid resets are priced by how much max loss you used, always shown before you pay.</p></div>
-        <div className="bf-tiers bf-reveal">
-          <div className="bf-tier-row head"><span>block</span><span>profit target</span><span>max loss</span><span>split</span><span /></div>
-          {tiers.map((tier) => <div className={`bf-tier-row ${tier.hot ? "hot" : ""}`} key={tier.size}><span className="size">{tier.size}<small>{tier.note}</small></span><span className="cell" data-label="profit target">{tier.target}</span><span className="cell" data-label="max loss">{tier.loss}</span><span className="cell highlight" data-label="split">{tier.split}</span><span className="buy"><Link className={`bf-btn ${tier.hot ? "bf-btn-accent" : "bf-btn-ghost"}`} href="/app">{tier.price}</Link></span></div>)}
+      <section id="accounts" className="bf-section bf-marketplace-section"><div className="bf-wrap">
+        <div className="bf-section-head bf-reveal"><span className="bf-kicker">Block marketplace</span><h2>Choose your <b>Block</b></h2><p>Each account now feels like a tradable object: target, max loss, split and entry price are visible before you launch.</p></div>
+        <div className="bf-block-market bf-reveal">
+          {tiers.map((tier, index) => <article className={tier.hot ? "hot" : ""} key={tier.size}>
+            <div className="bf-block-card-top"><span>BLOCK {String(index + 1).padStart(2, "0")}</span>{tier.hot && <em>most popular</em>}</div>
+            <strong>{tier.size}</strong>
+            <p>{tier.note}</p>
+            <div className="bf-block-bars">
+              <div><span>Target</span><b>{tier.target}</b><i style={{ width: index === 0 ? "54%" : index === 1 ? "68%" : "82%" }} /></div>
+              <div><span>Max loss</span><b>{tier.loss}</b><i style={{ width: index === 0 ? "42%" : index === 1 ? "58%" : "74%" }} /></div>
+              <div><span>Split</span><b>{tier.split}</b><i style={{ width: "90%" }} /></div>
+            </div>
+            <Link className={`bf-btn ${tier.hot ? "bf-btn-accent" : "bf-btn-ghost"}`} href="/app">{tier.price}</Link>
+          </article>)}
         </div>
         <p className="bf-tiers-note bf-reveal">Targets are high because the trenches are high · hit the target before your max loss and the account is yours. You get 30 days to pass an evaluation, and there are no daily limits. Funded Blocks have no clock.<br />A one-time <b>$50 lifetime activation fee</b> applies when your funded account is activated · never recurring. Consistent traders scale their Block to <b>$25k</b> after payouts.</p>
+      </div></section>
+
+      <section className="bf-section bf-simulator-section"><div className="bf-wrap">
+        <div className="bf-section-head bf-reveal"><span className="bf-kicker">Live challenge simulator</span><h2>See the evaluation pressure.</h2><p>A compact dashboard shows the thing traders care about: target distance, max-loss safety, trading days, and whether the Block is clean.</p></div>
+        <div className="bf-simulator bf-reveal">
+          <div className="bf-sim-left">
+            <div className="bf-sim-status"><span><i /> Day 07 / 30</span><b>No breach</b></div>
+            <div className="bf-sim-balance"><small>Current equity</small><strong>$7,120</strong><span>+$2,120 toward target</span></div>
+            <div className="bf-sim-chart" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></div>
+          </div>
+          <div className="bf-sim-right">
+            {simulatorStats.map((stat) => <article key={stat.label}><span>{stat.label}</span><b>{stat.value}</b><small>{stat.hint}</small></article>)}
+            <div className="bf-sim-progress"><div><span>Target progress</span><b>42%</b></div><i /></div>
+          </div>
+        </div>
       </div></section>
 
       <section className="bf-section"><div className="bf-wrap">
@@ -193,7 +254,11 @@ export default function Home() {
 
       <section id="payouts" className="bf-section"><div className="bf-wrap">
         <div className="bf-section-head bf-reveal"><h2>Every payout is a public transaction</h2><p>We pay in crypto, which means every payout comes with an on-chain receipt anyone can verify. No screenshots, no trust-me · just the chain.</p></div>
-        <div className="bf-payout-wall bf-reveal"><div className="bf-payout-head"><span>trader</span><span>payout</span><span>network</span><span>receipt</span></div><div className="bf-payout-empty"><b>No payouts yet · but funded Blocks are active.</b><span>The moment the first funded trader gets paid, their transaction hash appears here and you can verify it on-chain yourself. We would rather show an empty wall than invent one.</span></div></div>
+        <div className="bf-payout-wall bf-ghost-wall bf-reveal">
+          <div className="bf-payout-head"><span>trader</span><span>payout</span><span>network</span><span>receipt</span></div>
+          {payoutGhosts.map((row) => <div className="bf-ghost-row" key={row.trader}><span>{row.trader}</span><b>{row.payout}</b><span>{row.network}</span><code>{row.receipt}</code></div>)}
+          <div className="bf-payout-empty"><b>No public payouts yet · receipt slots are armed.</b><span>The first real funded payout will replace these ghost rows with a verifiable on-chain transaction. We keep it alive visually without inventing fake wins.</span></div>
+        </div>
         <div className="bf-section-head bf-reveal treasury-head"><h2>Live <b>Treasury Funds</b></h2><p>Payouts are backed by USDC held in the treasury wallet. The balance below is visible and can be verified on-chain.</p></div>
         <div className="bf-treasury-grid bf-reveal" ref={treasuryRef} onPointerMove={moveTreasuryGlow}>
           <div className="bf-treasury">
@@ -221,7 +286,15 @@ export default function Home() {
         </div>
       </div></section>
 
-      <div className="bf-final"><div className="bf-glow" /><div className="bf-wrap"><p>your skill.<br /><b>your funded Block.</b></p><Link className="bf-btn bf-btn-accent" href="/app">get your block</Link></div></div>
+      <div className="bf-final bf-launch-final"><div className="bf-glow" /><div className="bf-wrap">
+        <div className="bf-launch-panel">
+          <div className="bf-console-bar"><span /><span /><span /><b>launch.sequence</b></div>
+          <code>quantara.launch()<i /></code>
+          <div className="bf-launch-states"><span>market_feed: online</span><span>risk_engine: armed</span><span>treasury: synced</span></div>
+          <p>your skill.<br /><b>your funded Block.</b></p>
+          <Link className="bf-btn bf-btn-accent" href="/app">initialize block</Link>
+        </div>
+      </div></div>
 
       <footer className="bf-footer"><div className="bf-wrap">
         <div className="bf-footer-in"><Link className="bf-logo" href="#top"><span>quantara<span className="bf-cursor" /></span></Link><div><a href="#how">how it works</a><a href="#payouts">payouts</a><Link href="/rules">rules</Link><a href="#accounts">$quantara</a><Link href="/legal">terms</Link><Link href="/legal">privacy</Link></div></div>
