@@ -111,12 +111,12 @@ export function LiquidCandles() {
         context.save();
         context.globalAlpha = alpha;
         context.shadowBlur = candle.depth === 0 ? 18 : 8;
-        context.shadowColor = green ? "rgba(183,255,99,.32)" : "rgba(121,247,255,.24)";
+        context.shadowColor = green ? "rgba(243,186,47,.32)" : "rgba(121,247,255,.24)";
 
         const wickGradient = context.createLinearGradient(0, y - candle.wick, 0, y + candle.wick);
-        wickGradient.addColorStop(0, green ? "rgba(183,255,99,0)" : "rgba(121,247,255,0)");
-        wickGradient.addColorStop(.5, green ? "rgba(183,255,99,.55)" : "rgba(121,247,255,.46)");
-        wickGradient.addColorStop(1, green ? "rgba(183,255,99,0)" : "rgba(121,247,255,0)");
+        wickGradient.addColorStop(0, green ? "rgba(243,186,47,0)" : "rgba(121,247,255,0)");
+        wickGradient.addColorStop(.5, green ? "rgba(243,186,47,.55)" : "rgba(121,247,255,.46)");
+        wickGradient.addColorStop(1, green ? "rgba(243,186,47,0)" : "rgba(121,247,255,0)");
         context.strokeStyle = wickGradient;
         context.lineWidth = Math.max(1, 1.4 - candle.depth * .2);
         context.beginPath();
@@ -125,9 +125,9 @@ export function LiquidCandles() {
         context.stroke();
 
         const bodyGradient = context.createLinearGradient(x - candle.width, y, x + candle.width, y);
-        bodyGradient.addColorStop(0, green ? "rgba(183,255,99,.08)" : "rgba(121,247,255,.06)");
-        bodyGradient.addColorStop(.5, green ? "rgba(183,255,99,.48)" : "rgba(121,247,255,.38)");
-        bodyGradient.addColorStop(1, green ? "rgba(183,255,99,.12)" : "rgba(121,247,255,.08)");
+        bodyGradient.addColorStop(0, green ? "rgba(243,186,47,.08)" : "rgba(121,247,255,.06)");
+        bodyGradient.addColorStop(.5, green ? "rgba(243,186,47,.48)" : "rgba(121,247,255,.38)");
+        bodyGradient.addColorStop(1, green ? "rgba(243,186,47,.12)" : "rgba(121,247,255,.08)");
         context.fillStyle = bodyGradient;
         context.beginPath();
         context.roundRect(x - candle.width / 2, y - bodyHeight / 2, candle.width, bodyHeight, candle.width / 2);
