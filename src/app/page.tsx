@@ -10,6 +10,21 @@ const tiers = [
   { size: "$5,000", note: "evaluation block", target: "$5,000", loss: "$4,000", split: "90%", price: "$249 · start" },
 ];
 
+const primitives = [
+  { label: "Block Engine", desc: "evaluation + funded rules", status: "LIVE" },
+  { label: "Risk Guard", desc: "max loss enforcement", status: "LIVE" },
+  { label: "Treasury Rail", desc: "USDC payout reserve", status: "READY" },
+  { label: "Market Feed", desc: "BNB memecoin pricing", status: "LIVE" },
+  { label: "Payout Wall", desc: "public receipts after first payout", status: "ARMED" },
+  { label: "Scale Path", desc: "$5K → $25K funded blocks", status: "NEXT" },
+];
+
+const systemRows = [
+  { key: "RULESET", value: "30D / NO DAILY LIMIT" },
+  { key: "SPLIT", value: "90% TRADER" },
+  { key: "TREASURY", value: "$10,000 USDC" },
+];
+
 function XIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>;
 }
@@ -105,14 +120,29 @@ export default function Home() {
         <LiquidCandles />
         <div className="bf-glow" />
         <div className="bf-wrap">
-          <div className="bf-hero-head">
-            <h1>
-              <span className="bf-statline sl1">prove your edge in <b>live markets</b></span>
-              <span className="bf-statline sl2">unlock up to <b>$5k</b> in buying power</span>
-              <span className="bf-statline sl3 dim">keep <b>90%</b> when your strategy delivers</span>
-            </h1>
-            <p className="bf-hero-sub">Trade a rules-based simulation priced from live on-chain markets. Clear the evaluation, unlock a funded Block, and qualify for crypto payouts · without deposits, seed phrases, or KYC.</p>
-            <div className="bf-hero-cta"><Link className="bf-btn bf-btn-accent" href="/app">find your block</Link><Link className="bf-btn bf-btn-outline" href="/app">open the terminal</Link></div>
+          <div className="bf-hero-layout">
+            <div className="bf-hero-head">
+              <h1>
+                <span className="bf-statline sl1">prove your edge in <b>live markets</b></span>
+                <span className="bf-statline sl2">unlock up to <b>$5k</b> in buying power</span>
+                <span className="bf-statline sl3 dim">keep <b>90%</b> when your strategy delivers</span>
+              </h1>
+              <p className="bf-hero-sub">Trade a rules-based simulation priced from live on-chain markets. Clear the evaluation, unlock a funded Block, and qualify for crypto payouts · without deposits, seed phrases, or KYC.</p>
+              <div className="bf-hero-cta"><Link className="bf-btn bf-btn-accent" href="/app">find your block</Link><Link className="bf-btn bf-btn-outline" href="/app">open the terminal</Link></div>
+            </div>
+            <aside className="bf-hero-machine" aria-label="Quantara system preview">
+              <div className="bf-machine-top"><span><i /> BLOCK OS</span><b>online</b></div>
+              <div className="bf-dot-orb" aria-hidden="true">
+                {Array.from({ length: 96 }).map((_, index) => <i key={index} />)}
+              </div>
+              <div className="bf-command-card">
+                <small>terminal command</small>
+                <code>quantara / buy-block --size 5000</code>
+              </div>
+              <div className="bf-machine-rows">
+                {systemRows.map((row) => <div key={row.key}><span>{row.key}</span><b>{row.value}</b></div>)}
+              </div>
+            </aside>
           </div>
         </div>
         <div className="bf-live-ticker" aria-label="Quantara platform status">
@@ -150,6 +180,17 @@ export default function Home() {
         </div>
       </div></section>
 
+      <section className="bf-section bf-system-section"><div className="bf-wrap">
+        <div className="bf-section-head bf-reveal"><span className="bf-kicker">Quantara primitives</span><h2>More product, less empty landing.</h2><p>Every core promise is shown as a small working module, so the page feels like a live trading system instead of a static pitch deck.</p></div>
+        <div className="bf-primitives bf-reveal">
+          {primitives.map((primitive, index) => <article key={primitive.label} className={index === 0 ? "wide" : ""}>
+            <div><span>{String(index + 1).padStart(2, "0")}</span><em>{primitive.status}</em></div>
+            <h3>{primitive.label}</h3>
+            <p>{primitive.desc}</p>
+          </article>)}
+        </div>
+      </div></section>
+
       <section id="payouts" className="bf-section"><div className="bf-wrap">
         <div className="bf-section-head bf-reveal"><h2>Every payout is a public transaction</h2><p>We pay in crypto, which means every payout comes with an on-chain receipt anyone can verify. No screenshots, no trust-me · just the chain.</p></div>
         <div className="bf-payout-wall bf-reveal"><div className="bf-payout-head"><span>trader</span><span>payout</span><span>network</span><span>receipt</span></div><div className="bf-payout-empty"><b>No payouts yet · but funded Blocks are active.</b><span>The moment the first funded trader gets paid, their transaction hash appears here and you can verify it on-chain yourself. We would rather show an empty wall than invent one.</span></div></div>
@@ -172,6 +213,10 @@ export default function Home() {
             </div>
             <div className="bf-flow-stats"><span><small>Reserved</small><b>$2,400</b></span><span><small>Available</small><b>$7,600</b></span></div>
             <div className="bf-flow-activity"><div><span className="bf-activity-icon">↗</span><p><b>Demo payout queue</b><small>Simulation preview · no public payout yet</small></p><time>ready</time></div><div><span className="bf-activity-icon cyan">✓</span><p><b>BNB Chain sync</b><small>Treasury monitor is online</small></p><time>live</time></div></div>
+            <div className="bf-mini-terminal" aria-label="Treasury monitor log">
+              <div><span /> quantara.monitor</div>
+              <code>reserve_check: pass · payout_wall: awaiting first receipt</code>
+            </div>
           </aside>
         </div>
       </div></section>
