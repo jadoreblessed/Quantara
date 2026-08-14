@@ -1,10 +1,19 @@
 import { cookies } from "next/headers";
-import { blockTiers, getBlockTier, getTapeTrades, getToken, getTokenDetail, searchTokens, tokens, treasury } from "./data";
-import type { AppSnapshot, OrderSide, PortfolioSnapshot, RiskSnapshot, Trade, UserSession, WalletAccount } from "./types";
+import { backendConfig } from "./config";
+import { blockTiers, getBlockTier, getToken, treasury } from "./data";
+import { assertRateLimit, parseOrderSide, parsePositiveAmount } from "./guards";
+import { getMarketCatalog, getMarketFills, getMarketSafety, getMarketToken } from "./provider";
+import type { AppSnapshot, NotificationItem, OrderSide, PortfolioSnapshot, ReferralSnapshot, RiskSnapshot, StopOrder, Trade, UserSession, WalletAccount } from "./types";
 
-const SESSION_COOKIE = "quantara_session";
+const SESSION_COOKIE = backendConfig.sessionCookie;
 
-type StoredSession = UserSession & PortfolioSnapshot & { favorites: string[]; wallets: WalletAccount[] };
+type StoredSession = UserSession & PortfolioSnapshot & {
+  favorites: string[];
+  wallets: WalletAccount[];
+  stops: StopOrder[];
+  notifications: NotificationItem[];
+  referral: ReferralSnapshot;
+};
 type MemoryStore = Map<string, StoredSession>;
 
 const globalStore = globalThis as typeof globalThis & { quantaraStore?: MemoryStore };
@@ -16,6 +25,14 @@ const defaultPortfolio = (): PortfolioSnapshot => ({
   positions: [],
   trades: [],
   activeBlock: null,
+});
+
+const defaultReferral = (id: string): ReferralSnapshot => ({
+  code: `QNT-${id.slice(0, 6).toUpperCase()}`,
+  clicks: 0,
+  signups: 0,
+  claimable: 0,
+  claimed: 0,
 });
 
 function defaultRisk(): RiskSnapshot {
@@ -56,6 +73,16 @@ export async function createSession(email?: string, provider?: string) {
       { chain: "solana", address: "QuantaraSolDemo11111111111111111111111111", label: "Solana demo", attachedAt: new Date().toISOString() },
       { chain: "evm", address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F", label: "EVM demo", attachedAt: new Date().toISOString() },
     ],
+    stops: [],
+    notifications: [{
+      id: `n_${Date.now()}`,
+      type: "system",
+      title: "Demo backend online",
+      body: "Session, wallets, markets and trading services are active.",
+      seen: false,
+      createdAt: new Date().toISOString(),
+    }],
+    referral: defaultReferral(id),
     ...defaultPortfolio(),
   };
   store.set(id, session);
@@ -99,19 +126,23 @@ function calculateRisk(session: StoredSession | null): RiskSnapshot {
 export async function getSnapshot(): Promise<AppSnapshot> {
   const session = await getCurrentSession();
   const risk = calculateRisk(session);
+  const markets = await getMarketCatalog();
   return {
     session: publicSession(session),
     wallets: session?.wallets ?? [],
-    tokens,
+    tokens: markets.tokens,
     blockTiers,
     favorites: session?.favorites ?? [],
     portfolio: session ? { cash: session.cash, positions: session.positions, trades: session.trades, activeBlock: session.activeBlock } : defaultPortfolio(),
+    stops: session?.stops ?? [],
+    notifications: session?.notifications ?? [],
+    referral: session?.referral ?? defaultReferral("guest"),
     risk,
     treasury,
     status: {
       latencyMs: 86 + Math.floor(Math.random() * 32),
       indexedHead: 33610207 + Math.floor(Date.now() / 120000) % 9000,
-      mode: "simulation",
+      mode: backendConfig.mode,
     },
   };
 }
@@ -126,23 +157,19 @@ export async function getPortfolio() {
 }
 
 export function getMarkets() {
-  return { tokens, blockTiers, migrated: tokens.filter((token) => token.liqUsd >= 15000), almost: tokens.filter((token) => token.liqUsd < 15000) };
+  return getMarketCatalog();
 }
 
 export function getSearchResults(query: string) {
-  return { results: searchTokens(query).slice(0, 24) };
+  return getMarketCatalog(query).then((catalog) => ({ results: catalog.tokens.slice(0, 24) }));
 }
 
-export function getTokenRoute(identifier: string) {
-  const detail = getTokenDetail(identifier);
-  if (!detail) throw new Error("TOKEN_NOT_FOUND");
-  return detail;
+export function getTokenRoute(identifier: string, interval?: string) {
+  return getMarketToken(identifier, interval);
 }
 
 export function getSafetyRoute(identifier: string) {
-  const detail = getTokenDetail(identifier);
-  if (!detail) throw new Error("TOKEN_NOT_FOUND");
-  return detail.safety;
+  return getMarketSafety(identifier);
 }
 
 export async function getSessionAccount() {
@@ -166,7 +193,16 @@ export async function attachWallet(input: { chain: WalletAccount["chain"]; addre
     label: input.label?.trim() || (input.chain === "solana" ? "Solana wallet" : "EVM wallet"),
     attachedAt: new Date().toISOString(),
   };
-  session.wallets = [wallet, ...session.wallets.filter((item) => item.address.toLowerCase() !== address.toLowerCase())].slice(0, 8);
+  session.wallets = [wallet, ...session.wallets.filter((item) => item.address.toLowerCase() !== address.toLowerCase())].slice(0, backendConfig.maxWalletsPerUser);
+  const notification: NotificationItem = {
+    id: `n_${Date.now()}`,
+    type: "system",
+    title: "Wallet attached",
+    body: `${wallet.label} was connected to Quantara.`,
+    seen: false,
+    createdAt: new Date().toISOString(),
+  };
+  session.notifications = [notification, ...session.notifications].slice(0, 50);
   return getSessionAccount();
 }
 
@@ -223,8 +259,79 @@ export async function getMyFills(identifier?: string) {
       tx: `${token.network}_${trade.id}`,
     }];
   });
-  const marketFills = identifier ? getTapeTrades(identifier) : tokens.flatMap((token) => getTapeTrades(token.ticker).slice(0, 4));
+  const marketFills = await getMarketFills(identifier);
   return { fills: [...ownFills, ...marketFills].slice(0, 80) };
+}
+
+export async function getNotifications() {
+  const session = await getCurrentSession();
+  if (!session) throw new Error("AUTH_REQUIRED");
+  return { notifications: session.notifications };
+}
+
+export async function markNotificationsSeen() {
+  const session = await getCurrentSession();
+  if (!session) throw new Error("AUTH_REQUIRED");
+  session.notifications = session.notifications.map((item) => ({ ...item, seen: true }));
+  return getNotifications();
+}
+
+export async function getReferral() {
+  const session = await getCurrentSession();
+  if (!session) throw new Error("AUTH_REQUIRED");
+  return session.referral;
+}
+
+export async function claimReferral() {
+  const session = await getCurrentSession();
+  if (!session) throw new Error("AUTH_REQUIRED");
+  const amount = session.referral.claimable;
+  session.referral.claimable = 0;
+  session.referral.claimed += amount;
+  session.cash += amount;
+  return session.referral;
+}
+
+export function trackReferralClick(code: string) {
+  for (const session of store.values()) {
+    if (session.referral.code.toLowerCase() === code.toLowerCase()) {
+      session.referral.clicks += 1;
+      return { ok: true };
+    }
+  }
+  return { ok: false };
+}
+
+export async function getStops() {
+  const session = await getCurrentSession();
+  if (!session) throw new Error("AUTH_REQUIRED");
+  return { stops: session.stops };
+}
+
+export async function createStop(input: { ticker: string; side: OrderSide; triggerPrice: number; amount: number }) {
+  const session = await getCurrentSession();
+  if (!session) throw new Error("AUTH_REQUIRED");
+  const token = getToken(input.ticker);
+  if (!token) throw new Error("TOKEN_NOT_FOUND");
+  const stop: StopOrder = {
+    id: `stop_${Date.now()}`,
+    ticker: token.ticker,
+    side: parseOrderSide(input.side),
+    triggerPrice: Number(input.triggerPrice),
+    amount: parsePositiveAmount(input.amount),
+    status: "active",
+    createdAt: new Date().toISOString(),
+  };
+  if (!Number.isFinite(stop.triggerPrice) || stop.triggerPrice <= 0) throw new Error("INVALID_TRIGGER");
+  session.stops = [stop, ...session.stops].slice(0, 40);
+  return getStops();
+}
+
+export async function clearStop(id: string) {
+  const session = await getCurrentSession();
+  if (!session) throw new Error("AUTH_REQUIRED");
+  session.stops = session.stops.map((stop) => stop.id === id ? { ...stop, status: "cancelled" } : stop);
+  return getStops();
 }
 
 export async function logout() {
@@ -237,17 +344,17 @@ export async function logout() {
 export async function executeOrder(input: { ticker: string; side: OrderSide; amount: number }) {
   const session = await getCurrentSession();
   if (!session) throw new Error("AUTH_REQUIRED");
-  if (input.side !== "buy" && input.side !== "sell") throw new Error("INVALID_SIDE");
+  assertRateLimit(`trade:${session.id}`, 30, 60_000);
+  const side = parseOrderSide(input.side);
   const token = getToken(input.ticker);
   if (!token) throw new Error("TOKEN_NOT_FOUND");
   if (token.locked) throw new Error("MARKET_LOCKED");
-  const amount = Math.max(1, Math.round(input.amount * 100) / 100);
-  if (!Number.isFinite(amount) || amount <= 0) throw new Error("INVALID_AMOUNT");
-  if (amount > 10000) throw new Error("ORDER_TOO_LARGE");
+  const amount = parsePositiveAmount(input.amount);
+  if (amount > backendConfig.maxOrderUsd) throw new Error("ORDER_TOO_LARGE");
   const quantity = amount / token.price;
   const existing = session.positions.find((position) => position.ticker === token.ticker);
 
-  if (input.side === "buy") {
+  if (side === "buy") {
     if (amount > session.cash) throw new Error("INSUFFICIENT_CASH");
     if (existing) {
       const totalCost = existing.quantity * existing.averagePrice + amount;
@@ -267,13 +374,22 @@ export async function executeOrder(input: { ticker: string; side: OrderSide; amo
   const trade: Trade = {
     id: Date.now(),
     ticker: token.ticker,
-    side: input.side,
+    side,
     quantity,
     price: token.price,
     total: amount,
     time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
   };
   session.trades = [trade, ...session.trades].slice(0, 80);
+  const notification: NotificationItem = {
+    id: `n_${trade.id}`,
+    type: "trade",
+    title: `${side.toUpperCase()} ${token.ticker}`,
+    body: `$${amount.toLocaleString("en-US")} filled at $${token.price.toFixed(6)}.`,
+    seen: false,
+    createdAt: new Date().toISOString(),
+  };
+  session.notifications = [notification, ...session.notifications].slice(0, 50);
   return getSnapshot();
 }
 
@@ -285,6 +401,6 @@ export async function executeTrade(input: { token: string; side: OrderSide; amou
 
 export function formatBackendError(error: unknown) {
   const message = error instanceof Error ? error.message : "UNKNOWN";
-  const status = message === "AUTH_REQUIRED" ? 401 : message.includes("NOT_FOUND") ? 404 : 400;
+  const status = message === "AUTH_REQUIRED" ? 401 : message === "RATE_LIMITED" ? 429 : message.includes("NOT_FOUND") ? 404 : 400;
   return Response.json({ error: message }, { status });
 }
