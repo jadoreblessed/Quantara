@@ -56,9 +56,19 @@ export type TapeTrade = {
   tx: string;
 };
 
+export type Candle = {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+};
+
 export type TokenDetail = Token & {
   holdersList: Holder[];
   trades: TapeTrade[];
+  candles: Candle[];
   safety: {
     score: number;
     top10Pct: number;
@@ -66,6 +76,33 @@ export type TokenDetail = Token & {
     liquidityUsd: number;
     warnings: string[];
   };
+};
+
+export type StopOrder = {
+  id: string;
+  ticker: string;
+  side: OrderSide;
+  triggerPrice: number;
+  amount: number;
+  status: "active" | "triggered" | "cancelled";
+  createdAt: string;
+};
+
+export type NotificationItem = {
+  id: string;
+  type: "trade" | "risk" | "system" | "referral";
+  title: string;
+  body: string;
+  seen: boolean;
+  createdAt: string;
+};
+
+export type ReferralSnapshot = {
+  code: string;
+  clicks: number;
+  signups: number;
+  claimable: number;
+  claimed: number;
 };
 
 export type PortfolioSnapshot = {
@@ -101,11 +138,14 @@ export type AppSnapshot = {
   blockTiers: BlockTier[];
   favorites: string[];
   portfolio: PortfolioSnapshot;
+  stops: StopOrder[];
+  notifications: NotificationItem[];
+  referral: ReferralSnapshot;
   risk: RiskSnapshot;
   treasury: TreasurySnapshot;
   status: {
     latencyMs: number;
     indexedHead: number;
-    mode: "simulation";
+    mode: "simulation" | "live";
   };
 };
