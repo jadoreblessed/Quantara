@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import type { AppSnapshot, BlockTier, Chain, OrderSide, Position, Token, Trade, View } from "@/lib/quantara/types";
 import { blockTiers as fallbackBlockTiers, tokens as fallbackTokens } from "@/lib/quantara/data";
 
@@ -59,6 +61,12 @@ export default function AppPage() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showOther, setShowOther] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  const { publicKey, connected, disconnect: disconnectWallet } = useWallet();
+  const { setVisible: setWalletModalVisible } = useWalletModal();
+  const attachedWalletRef = useRef<string | null>(null);
+  const userNameRef = useRef<string | null>(null);
+  useEffect(() => { userNameRef.current = userName; }, [userName]);
 
   const flash = useCallback((message: string) => {
     setToast(message);
@@ -148,15 +156,35 @@ export default function AppPage() {
     }
   };
 
-  const connectDemoWallet = async (provider: string) => {
-    try {
-      await api("/api/auth/demo", { method: "POST", body: JSON.stringify({ provider }) });
-      setShowAuth(false);
-      flash(`${provider} connected in demo mode`);
-    } catch {
-      flash("Could not connect demo wallet");
-    }
-  };
+  // Opens the Wallet Standard modal, which lists every compatible wallet
+  // installed in the browser (Phantom, Solflare, Backpack, etc). We only
+  // ever request the public address here — no signature, no transaction.
+  const openWalletConnect = () => setWalletModalVisible(true);
+
+  // Once a wallet reports a public key, link that real address to the
+  // paper-trading session. This never touches funds: it only identifies
+  // the account. Runs whenever the wallet connection state changes.
+  useEffect(() => {
+    if (!connected || !publicKey) return;
+    const address = publicKey.toBase58();
+    if (attachedWalletRef.current === address) return;
+    attachedWalletRef.current = address;
+
+    (async () => {
+      try {
+        // Only spin up a fresh demo session if the user isn't already
+        // signed in — otherwise this would reset their paper portfolio.
+        if (!userNameRef.current) {
+          await api("/api/auth/demo", { method: "POST", body: JSON.stringify({ provider: "Solana wallet" }) });
+        }
+        await api("/api/wallets", { method: "POST", body: JSON.stringify({ chain: "solana", address, label: "Connected wallet" }) });
+        setShowAuth(false);
+        flash(`Wallet connected · ${address.slice(0, 4)}...${address.slice(-4)}`);
+      } catch {
+        flash("Could not link connected wallet");
+      }
+    })();
+  }, [connected, publicKey, api, flash]);
 
   const activateBlock = async (tier: BlockTier) => {
     if (!userName) {
@@ -172,6 +200,21 @@ export default function AppPage() {
       flash(`${formatCurrency(tier.size)} evaluation Block activated`);
     } catch {
       flash("Could not activate Block");
+    }
+  };
+
+  const handleAccountButton = async () => {
+    if (!userName) {
+      setShowAuth(true);
+      return;
+    }
+    try {
+      if (connected) await disconnectWallet();
+      attachedWalletRef.current = null;
+      await api("/api/auth/logout", { method: "POST" });
+      flash("Signed out");
+    } catch {
+      flash("Could not sign out");
     }
   };
 
@@ -223,7 +266,7 @@ export default function AppPage() {
             <button type="button" className="icon-button" aria-label="Notifications" aria-expanded={showNotifications} onClick={() => setShowNotifications((value) => !value)}><AppIcon name="bell" /><i /></button>
             {showNotifications && <div className="app-popover notification-popover"><b>Notifications</b><p>Paper terminal is ready.</p><p>{activeBlock ? "Your evaluation Block is active." : "Start a Block when you are ready to evaluate."}</p><small>Live backend alerts arrive in a later phase.</small></div>}
           </div>
-          <button type="button" className="login-button" onClick={() => setShowAuth(true)}>{userName ?? "Log in / Sign up"}</button>
+          <button type="button" className="login-button" onClick={handleAccountButton} title={connected && publicKey ? "Click to disconnect wallet" : undefined}>{connected && publicKey ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}` : userName ?? "Log in / Sign up"}</button>
         </div>
       </header>
 
@@ -243,7 +286,7 @@ export default function AppPage() {
 
       <footer className="app-status"><span><i /> Stable · {backendStatus.latencyMs} ms</span><span>SOL $76.1</span><span>ETH $1,888</span><span>{formatCurrency(trades.reduce((sum, trade) => sum + trade.total, 0))} paper routed</span><span>indexed head {backendStatus.indexedHead.toLocaleString("en-US")}</span><b>simulation only · no deposits or live orders</b></footer>
 
-      {showAuth ? <AuthModal authEmail={authEmail} setAuthEmail={setAuthEmail} close={() => setShowAuth(false)} submit={submitAuth} connect={connectDemoWallet} /> : null}
+      {showAuth ? <AuthModal authEmail={authEmail} setAuthEmail={setAuthEmail} close={() => setShowAuth(false)} submit={submitAuth} connect={openWalletConnect} /> : null}
       {showBlockPicker ? <BlockPicker tiers={availableBlocks} close={() => setShowBlockPicker(false)} activate={activateBlock} /> : null}
       {selectedToken ? <OrderModal token={selectedToken} side={orderSide} setSide={setOrderSide} amount={orderAmount} setAmount={setOrderAmount} paperCash={paperCash} userName={userName} close={() => setSelectedToken(null)} submit={executeOrder} /> : null}
       {toast ? <div className="app-toast" role="status">{toast}</div> : null}
@@ -286,8 +329,8 @@ function BlockView({ activeBlock, portfolioValue, totalPnl, targetProgress, star
   return <div className="app-view"><div className="view-heading"><div><span>Evaluation</span><h1>My Block</h1><p>Track the rules and progress of your current simulated evaluation.</p></div>{activeBlock ? <button type="button" className="secondary-action" onClick={startBlock}>Switch Block</button> : null}</div>{activeBlock ? <div className="block-dashboard"><section className="block-primary"><div className="block-label"><span>Active evaluation</span><i>paper</i></div><b>{formatCurrency(activeBlock.size)}</b><p>Starting buying power</p><div className="progress-copy"><span>Profit target progress</span><b>{targetProgress.toFixed(1)}%</b></div><div className="progress-track"><i style={{ width: `${targetProgress}%` }} /></div><small>{formatCurrency(Math.max(0, activeBlock.target - totalPnl), 2)} remaining to target</small></section><section className="block-rules"><article><span>Current equity</span><b>{formatCurrency(portfolioValue, 2)}</b><small className={totalPnl >= 0 ? "positive" : "negative"}>{totalPnl >= 0 ? "+" : ""}{formatCurrency(totalPnl, 2)}</small></article><article><span>Maximum loss</span><b>{formatCurrency(activeBlock.maxLoss)}</b><small>{formatCurrency(activeBlock.maxLoss + totalPnl, 2)} buffer remaining</small></article><article><span>Profit split</span><b>90%</b><small>after evaluation</small></article><article><span>Time remaining</span><b>30 days</b><small>no daily loss limit</small></article></section></div> : <EmptyState title="Start your first Block" copy="Pick a simulated evaluation size. This demo activates it locally, resets the paper account, and starts tracking your progress." action="Choose a Block" onAction={startBlock} />}</div>;
 }
 
-function AuthModal({ authEmail, setAuthEmail, close, submit, connect }: { authEmail: string; setAuthEmail: (value: string) => void; close: () => void; submit: (event: FormEvent<HTMLFormElement>) => void; connect: (provider: string) => void }) {
-  return <div className="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-title"><div className="auth-backdrop" onClick={close} /><form className="auth-modal" onSubmit={submit}><button type="button" className="auth-close" onClick={close} aria-label="Close"><AppIcon name="x" /></button><span className="modal-kicker">Demo access</span><h2 id="auth-title">Enter the terminal</h2><p>Create a local demo session. No account is sent to a server.</p><button type="button" className="wallet-button primary" onClick={() => connect("Phantom")}><span className="wallet-mark phantom" aria-hidden="true" />Continue with Phantom</button><button type="button" className="wallet-button" onClick={() => connect("WalletConnect")}><span className="wallet-mark wc" aria-hidden="true" />WalletConnect</button><div className="divider"><span /> or use email <span /></div><label>Email<input required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@email.com" type="email" /></label><label>Password<input required placeholder="at least 8 characters" type="password" minLength={8} /></label><button type="submit" className="create-account">Create demo session</button><small>Paper trading only · this form stores no credentials and sends no transactions.</small></form></div>;
+function AuthModal({ authEmail, setAuthEmail, close, submit, connect }: { authEmail: string; setAuthEmail: (value: string) => void; close: () => void; submit: (event: FormEvent<HTMLFormElement>) => void; connect: () => void }) {
+  return <div className="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-title"><div className="auth-backdrop" onClick={close} /><form className="auth-modal" onSubmit={submit}><button type="button" className="auth-close" onClick={close} aria-label="Close"><AppIcon name="x" /></button><span className="modal-kicker">Demo access</span><h2 id="auth-title">Enter the terminal</h2><p>Create a local demo session. No account is sent to a server.</p><button type="button" className="wallet-button primary" onClick={connect}><span className="wallet-mark phantom" aria-hidden="true" />Connect wallet</button><small>Detects any installed Solana wallet · reads your address only, no signature or transaction requested.</small><div className="divider"><span /> or use email <span /></div><label>Email<input required value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@email.com" type="email" /></label><label>Password<input required placeholder="at least 8 characters" type="password" minLength={8} /></label><button type="submit" className="create-account">Create demo session</button><small>Paper trading only · this form stores no credentials and sends no transactions.</small></form></div>;
 }
 
 function BlockPicker({ tiers, close, activate }: { tiers: BlockTier[]; close: () => void; activate: (tier: BlockTier) => void }) {
