@@ -1,4 +1,4 @@
-import type { BlockTier, Holder, TapeTrade, Token, TokenDetail, TreasurySnapshot } from "./types";
+import type { BlockTier, Candle, Holder, TapeTrade, Token, TokenDetail, TreasurySnapshot } from "./types";
 
 export const tokens: Token[] = [
   { token: "So111111111111111111111111111111111111SURI", ticker: "SURI", name: "Suri", chain: "SOL", network: "solana", launchpad: "pump.fun", dex: "PumpSwap", ageMinutes: 2, ageSec: 143, liquidity: 12300, liqUsd: 12300, holders: 308, top10: 23, top10Pct: 23, marketCap: 42900, mcUsd: 42900, volume: 17400, priceUsd: 0.000429, change: 18.4, price: 0.000429, pool: "6suriPoolxQNT11111111111111111111111111", tradeable: true },
@@ -79,6 +79,31 @@ export function getTapeTrades(identifier: string): TapeTrade[] {
   });
 }
 
+export function getCandles(identifier: string, interval = "1m"): Candle[] {
+  const token = getToken(identifier);
+  if (!token) return [];
+  const step = interval === "5m" ? 300 : interval === "15m" ? 900 : 60;
+  const now = Math.floor(Date.now() / 1000 / step) * step;
+  const seed = shortHash(`${token.token}:${interval}`);
+  return Array.from({ length: 96 }, (_, index) => {
+    const offset = 95 - index;
+    const wave = Math.sin((index + seed % 23) / 7) * 0.045;
+    const drift = (index - 48) * 0.0008;
+    const close = token.priceUsd * Math.max(0.35, 1 + wave + drift);
+    const open = close * (1 + Math.sin(index / 3) * 0.012);
+    const high = Math.max(open, close) * (1.012 + ((seed + index) % 7) * 0.002);
+    const low = Math.min(open, close) * (0.988 - ((seed + index) % 5) * 0.001);
+    return {
+      time: now - offset * step,
+      open: Math.round(open * 1_000_000_000) / 1_000_000_000,
+      high: Math.round(high * 1_000_000_000) / 1_000_000_000,
+      low: Math.round(low * 1_000_000_000) / 1_000_000_000,
+      close: Math.round(close * 1_000_000_000) / 1_000_000_000,
+      volume: Math.round(token.volume / 96 * (0.6 + ((seed + index * 13) % 80) / 100)),
+    };
+  });
+}
+
 export function getTokenDetail(identifier: string): TokenDetail | null {
   const token = getToken(identifier);
   if (!token) return null;
@@ -91,6 +116,7 @@ export function getTokenDetail(identifier: string): TokenDetail | null {
     ...token,
     holdersList: getHolders(identifier),
     trades: getTapeTrades(identifier),
+    candles: getCandles(identifier),
     safety: {
       score: Math.max(24, Math.min(96, 100 - token.top10Pct - (token.liqUsd < 10000 ? 14 : 0) - (token.locked ? 18 : 0))),
       top10Pct: token.top10Pct,
