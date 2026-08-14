@@ -100,6 +100,16 @@ function tokenFromBirdeye(row: JsonRecord, chain = backendConfig.marketDataChain
   };
 }
 
+export async function getBirdeyeMetadata(addresses: string[], chain = backendConfig.marketDataChain) {
+  if (addresses.length === 0) return {} as Record<string, JsonRecord>;
+  const payload = await birdeyeGet(
+    "/defi/v3/token/meta-data/multiple",
+    { list_address: addresses.slice(0, 50).join(",") },
+    chain,
+  );
+  return dataOf(payload) as Record<string, JsonRecord>;
+}
+
 export async function getBirdeyeCatalog(query = "") {
   const chain = backendConfig.marketDataChain;
   const path = query ? "/defi/v3/search" : "/defi/v2/tokens/new_listing";
@@ -108,7 +118,19 @@ export async function getBirdeyeCatalog(query = "") {
   const data = dataOf(payload);
   const rawItems = data.items ?? data.tokens ?? data;
   const items = Array.isArray(rawItems) ? rawItems : [];
-  const liveTokens = items.map((item) => tokenFromBirdeye(asRecord(item), chain)).filter((token) => token.token);
+  let liveTokens = items.map((item) => tokenFromBirdeye(asRecord(item), chain)).filter((token) => token.token);
+
+  try {
+    const metadata = await getBirdeyeMetadata(liveTokens.map((t) => t.token), chain);
+    liveTokens = liveTokens.map((token) => {
+      const meta = asRecord(metadata[token.token]);
+      const logoUrl = asString(meta.logo_uri ?? meta.logoURI, "");
+      return logoUrl ? { ...token, logoUrl } : token;
+    });
+  } catch {
+    // метадата — не критична, отдаём токены без лого, если батч упал
+  }
+
   return {
     tokens: liveTokens,
     migrated: liveTokens.filter((token) => token.liqUsd >= 15000),
@@ -184,11 +206,13 @@ export async function getBirdeyeTrades(identifier: string, chain = backendConfig
 
 export async function getBirdeyeCandles(identifier: string, interval = "1m", chain = backendConfig.marketDataChain): Promise<Candle[]> {
   const now = Math.floor(Date.now() / 1000);
-  const payload = await birdeyeGet("/defi/ohlcv", {
+  const payload = await birdeyeGet("/defi/v3/ohlcv", {
     address: identifier,
     type: interval,
     time_from: now - 60 * 60 * 12,
     time_to: now,
+    mode: "range",
+    outlier: false,
   }, chain);
   const items = dataOf(payload).items;
   if (!Array.isArray(items)) return [];
