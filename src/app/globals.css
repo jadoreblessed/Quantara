@@ -3565,3 +3565,39 @@ svg {
 @media (prefers-reduced-motion: reduce) {
   .trade-app * { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
+
+/* Token detail view */
+.token-detail { display: grid; gap: 18px; }
+.back-action { justify-self: start; display: inline-flex; align-items: center; gap: 6px; }
+.back-action .ui-icon { transform: rotate(90deg); width: 14px; height: 14px; }
+.token-detail-head { display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid var(--app-line); border-radius: 14px; background: var(--app-panel); }
+.avatar-lg { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #0a43b8, #c8defe); flex-shrink: 0; }
+.token-detail-head h1 { margin: 0; font-size: 20px; display: flex; align-items: baseline; gap: 8px; }
+.token-detail-head h1 small { color: var(--app-muted); font-size: 13px; font-weight: 500; }
+.token-detail-head p { margin: 4px 0 0; color: var(--app-muted); font-size: 12px; }
+.token-detail-price { margin-left: auto; text-align: right; }
+.token-detail-price b { display: block; font-size: 22px; }
+.token-detail-price em { font-style: normal; font-size: 12px; }
+.token-detail-stats { grid-template-columns: repeat(4, 1fr); }
+.token-detail-stats article { padding: 14px 16px; }
+.token-detail-stats span { display: block; color: var(--app-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+.token-detail-stats b { display: block; margin-top: 4px; font-size: 16px; }
+.token-detail-chart { border: 1px solid var(--app-line); border-radius: 14px; background: var(--app-panel); overflow: hidden; }
+.price-chart { display: block; width: 100%; height: 320px; }
+.chart-empty { display: grid; place-items: center; height: 320px; color: var(--app-muted); font-size: 12px; }
+.safety-panel { padding: 18px 20px; border: 1px solid var(--app-line); border-radius: 14px; background: var(--app-panel); }
+.safety-head { display: flex; align-items: center; justify-content: space-between; }
+.safety-head b { font-size: 14px; }
+.safety-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+.safety-grid article { padding: 10px 12px; border: 1px solid var(--app-soft-line); border-radius: 10px; background: var(--app-panel-2); }
+.safety-grid span { display: block; color: var(--app-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
+.safety-grid b { display: block; margin-top: 4px; font-size: 14px; }
+.safety-warnings { margin: 14px 0 0; padding-left: 18px; color: var(--red); font-size: 12px; }
+.token-detail-trades .data-row { grid-template-columns: 70px 60px 1fr 1fr 1fr 30px; }
+
+@media (max-width: 720px) {
+  .token-detail-head { flex-wrap: wrap; }
+  .token-detail-price { margin-left: 0; text-align: left; }
+  .token-detail-stats { grid-template-columns: repeat(2, 1fr); }
+  .safety-grid { grid-template-columns: repeat(2, 1fr); }
+}

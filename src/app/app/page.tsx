@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import type { AppSnapshot, BlockTier, Chain, OrderSide, Position, Token, Trade, View } from "@/lib/quantara/types";
+import type { AppSnapshot, BlockTier, Candle, Chain, OrderSide, Position, Token, TokenDetail, Trade, View } from "@/lib/quantara/types";
 import { blockTiers as fallbackBlockTiers, tokens as fallbackTokens } from "@/lib/quantara/data";
 
 type IconName = "bell" | "chevron" | "filter" | "lock" | "search" | "sound" | "star" | "x";
@@ -51,6 +51,9 @@ export default function AppPage() {
   const [activeBlock, setActiveBlock] = useState<BlockTier | null>(null);
   const [buySize, setBuySize] = useState(50);
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [viewingToken, setViewingToken] = useState<Token | null>(null);
+  const [tokenDetail, setTokenDetail] = useState<TokenDetail | null>(null);
+  const [tokenDetailLoading, setTokenDetailLoading] = useState(false);
   const [orderSide, setOrderSide] = useState<OrderSide>("buy");
   const [orderAmount, setOrderAmount] = useState(50);
   const [paperCash, setPaperCash] = useState(5000);
@@ -144,6 +147,30 @@ export default function AppPage() {
     setOrderSide(side);
     setOrderAmount(buySize);
   };
+
+  // Opens the full-page market detail (chart, live trade tape, safety
+  // check) for a token. Runs on a plain click of the row; the "trade $X"
+  // and star buttons stop propagation so they keep their own behavior.
+  const openTokenDetail = useCallback(async (token: Token) => {
+    setViewingToken(token);
+    setTokenDetail(null);
+    setTokenDetailLoading(true);
+    try {
+      const response = await fetch(`/api/token/${encodeURIComponent(token.token)}`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "TOKEN_DETAIL_ERROR");
+      setTokenDetail(payload as TokenDetail);
+    } catch {
+      flash("Could not load market detail");
+    } finally {
+      setTokenDetailLoading(false);
+    }
+  }, [flash]);
+
+  const closeTokenDetail = useCallback(() => {
+    setViewingToken(null);
+    setTokenDetail(null);
+  }, []);
 
   const submitAuth = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -271,17 +298,23 @@ export default function AppPage() {
       </header>
 
       <section className="app-body">
-        {activeView === "Trenches" ? <TrenchesView
-          chain={chain} setChain={setChain} query={query} setQuery={setQuery} sort={sort} setSort={setSort}
-          autoFilter={autoFilter} setAutoFilter={setAutoFilter} showFilters={showFilters} setShowFilters={setShowFilters}
-          showLocked={showLocked} setShowLocked={setShowLocked} minLiquidity={minLiquidity} setMinLiquidity={setMinLiquidity}
-          favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly} favorites={new Set(favorites)} toggleFavorite={toggleFavorite}
-          buySize={buySize} setBuySize={setBuySize} visibleTokens={visibleTokens} openOrder={openOrder}
-        /> : null}
+        {viewingToken ? (
+          <TokenDetailView token={viewingToken} detail={tokenDetail} loading={tokenDetailLoading} buySize={buySize} close={closeTokenDetail} openOrder={openOrder} />
+        ) : (
+          <>
+            {activeView === "Trenches" ? <TrenchesView
+              chain={chain} setChain={setChain} query={query} setQuery={setQuery} sort={sort} setSort={setSort}
+              autoFilter={autoFilter} setAutoFilter={setAutoFilter} showFilters={showFilters} setShowFilters={setShowFilters}
+              showLocked={showLocked} setShowLocked={setShowLocked} minLiquidity={minLiquidity} setMinLiquidity={setMinLiquidity}
+              favoritesOnly={favoritesOnly} setFavoritesOnly={setFavoritesOnly} favorites={new Set(favorites)} toggleFavorite={toggleFavorite}
+              buySize={buySize} setBuySize={setBuySize} visibleTokens={visibleTokens} openOrder={openOrder} openTokenDetail={openTokenDetail}
+            /> : null}
 
-        {activeView === "Portfolio" ? <PortfolioView paperCash={paperCash} portfolioValue={portfolioValue} unrealizedPnl={unrealizedPnl} positionRows={positionRows} setActiveView={setActiveView} openOrder={openOrder} /> : null}
-        {activeView === "Journal" ? <JournalView trades={trades} clearJournal={() => api("/api/journal", { method: "DELETE" }).then(() => flash("Journal cleared"))} setActiveView={setActiveView} /> : null}
-        {activeView === "My Block" ? <BlockView activeBlock={activeBlock} portfolioValue={portfolioValue} totalPnl={totalPnl} targetProgress={targetProgress} startBlock={() => setShowBlockPicker(true)} /> : null}
+            {activeView === "Portfolio" ? <PortfolioView paperCash={paperCash} portfolioValue={portfolioValue} unrealizedPnl={unrealizedPnl} positionRows={positionRows} setActiveView={setActiveView} openOrder={openOrder} /> : null}
+            {activeView === "Journal" ? <JournalView trades={trades} clearJournal={() => api("/api/journal", { method: "DELETE" }).then(() => flash("Journal cleared"))} setActiveView={setActiveView} /> : null}
+            {activeView === "My Block" ? <BlockView activeBlock={activeBlock} portfolioValue={portfolioValue} totalPnl={totalPnl} targetProgress={targetProgress} startBlock={() => setShowBlockPicker(true)} /> : null}
+          </>
+        )}
       </section>
 
       <footer className="app-status"><span><i /> Stable · {backendStatus.latencyMs} ms</span><span>SOL $76.1</span><span>ETH $1,888</span><span>{formatCurrency(trades.reduce((sum, trade) => sum + trade.total, 0))} paper routed</span><span>indexed head {backendStatus.indexedHead.toLocaleString("en-US")}</span><b>simulation only · no deposits or live orders</b></footer>
@@ -300,19 +333,19 @@ type TrenchesProps = {
   autoFilter: boolean; setAutoFilter: (value: boolean) => void; showFilters: boolean; setShowFilters: (value: boolean) => void;
   showLocked: boolean; setShowLocked: (value: boolean) => void; minLiquidity: number; setMinLiquidity: (value: number) => void;
   favoritesOnly: boolean; setFavoritesOnly: (value: boolean) => void; favorites: Set<string>; toggleFavorite: (ticker: string) => void;
-  buySize: number; setBuySize: (value: number) => void; visibleTokens: Token[]; openOrder: (token: Token, side?: OrderSide) => void;
+  buySize: number; setBuySize: (value: number) => void; visibleTokens: Token[]; openOrder: (token: Token, side?: OrderSide) => void; openTokenDetail: (token: Token) => void;
 };
 
 function TrenchesView(props: TrenchesProps) {
   const resetView = () => { props.setQuery(""); props.setMinLiquidity(0); props.setShowLocked(true); props.setAutoFilter(false); props.setFavoritesOnly(false); };
   return <>
     <div className="market-toolbar"><div className="toolbar-title"><span>Paper terminal</span><h1>Trenches</h1></div><div className="chain-tabs" role="tablist" aria-label="Network">{(["SOL", "hood", "BNB", "BASE"] as Chain[]).map((item) => <button type="button" role="tab" aria-selected={props.chain === item} key={item} className={props.chain === item ? "active" : ""} onClick={() => props.setChain(item)}>{item}</button>)}</div><div className="toolbar-spacer" /><button type="button" className={`filter ${props.autoFilter ? "active" : ""}`} onClick={() => props.setAutoFilter(!props.autoFilter)}>auto filter</button><div className="filter-menu"><button type="button" className={`filter ${props.showFilters ? "active" : ""}`} aria-expanded={props.showFilters} onClick={() => props.setShowFilters(!props.showFilters)}><AppIcon name="filter" /> filters</button>{props.showFilters ? <div className="app-popover filter-popover"><label>Minimum liquidity<select value={props.minLiquidity} onChange={(event) => props.setMinLiquidity(Number(event.target.value))}><option value={0}>Any liquidity</option><option value={10000}>$10K+</option><option value={20000}>$20K+</option></select></label><label className="toggle-row"><span>Show locked markets</span><input type="checkbox" checked={props.showLocked} onChange={(event) => props.setShowLocked(event.target.checked)} /></label><button type="button" onClick={resetView}>Reset filters</button></div> : null}</div><button type="button" className={`filter ${props.favoritesOnly ? "active" : ""}`} onClick={() => props.setFavoritesOnly(!props.favoritesOnly)}><AppIcon name="star" /> {props.favorites.size}</button><label className="buy-size">order $<input aria-label="Default order size" value={props.buySize} min={1} onChange={(event) => props.setBuySize(Math.max(1, Number(event.target.value) || 1))} inputMode="numeric" /></label></div>
-    <div className="trenches-board"><div className="board-head"><div><b>migrated</b><span> · {props.visibleTokens.length}</span><small>paper fills · live market pricing</small></div><label><AppIcon name="search" /><input value={props.query} onChange={(event) => props.setQuery(event.target.value)} placeholder="search ticker or token name..." /></label><label className="sort-select">sort<select aria-label="Sort tokens" value={props.sort} onChange={(event) => props.setSort(event.target.value as TrenchesProps["sort"])}><option value="new">new</option><option value="volume">volume</option><option value="movers">movers</option></select></label></div><div className="token-list">{props.visibleTokens.length > 0 ? props.visibleTokens.map((token, index) => <TokenRow key={token.ticker} token={token} tokenIndex={index} buySize={props.buySize} favorite={props.favorites.has(token.ticker)} toggleFavorite={props.toggleFavorite} openOrder={props.openOrder} />) : <div className="board-empty"><AppIcon name="search" /><b>No markets match these filters</b><span>Change the network, clear the search, or reset filters.</span><button type="button" onClick={resetView}>Reset view</button></div>}</div></div>
+    <div className="trenches-board"><div className="board-head"><div><b>migrated</b><span> · {props.visibleTokens.length}</span><small>paper fills · live market pricing</small></div><label><AppIcon name="search" /><input value={props.query} onChange={(event) => props.setQuery(event.target.value)} placeholder="search ticker or token name..." /></label><label className="sort-select">sort<select aria-label="Sort tokens" value={props.sort} onChange={(event) => props.setSort(event.target.value as TrenchesProps["sort"])}><option value="new">new</option><option value="volume">volume</option><option value="movers">movers</option></select></label></div><div className="token-list">{props.visibleTokens.length > 0 ? props.visibleTokens.map((token, index) => <TokenRow key={token.ticker} token={token} tokenIndex={index} buySize={props.buySize} favorite={props.favorites.has(token.ticker)} toggleFavorite={props.toggleFavorite} openOrder={props.openOrder} openDetail={props.openTokenDetail} />) : <div className="board-empty"><AppIcon name="search" /><b>No markets match these filters</b><span>Change the network, clear the search, or reset filters.</span><button type="button" onClick={resetView}>Reset view</button></div>}</div></div>
   </>;
 }
 
-function TokenRow({ token, tokenIndex, buySize, favorite, toggleFavorite, openOrder }: { token: Token; tokenIndex: number; buySize: number; favorite: boolean; toggleFavorite: (ticker: string) => void; openOrder: (token: Token) => void }) {
-  return <article className="token-row" onDoubleClick={() => openOrder(token)}><button type="button" className={`favorite-token ${favorite ? "active" : ""}`} aria-label={`${favorite ? "Remove" : "Add"} ${token.ticker} ${favorite ? "from" : "to"} favorites`} onClick={() => toggleFavorite(token.ticker)}><AppIcon name="star" /></button><span className={`token-avatar avatar-${tokenIndex}`}>{token.ticker.slice(0, 1)}</span><div className="token-main"><div><b>{token.ticker}</b><span>{token.name}</span><small>{token.chain} · {token.ticker.slice(0, 4)}...paper</small></div><p>{token.ageMinutes < 60 ? `${token.ageMinutes}m` : `${Math.floor(token.ageMinutes / 60)}h`}</p><div className="token-tags"><span>LIQ ${formatCompact(token.liquidity)}</span><span>HLD {token.holders}</span><span>T10 {token.top10}%</span></div></div><div className="token-metrics"><small>MC</small><b>${formatCompact(token.marketCap)}</b><span>V ${formatCompact(token.volume)}</span><em className={token.change >= 0 ? "positive" : "negative"}>{token.change >= 0 ? "+" : ""}{token.change.toFixed(1)}%</em></div><button type="button" className={token.locked ? "buy-token locked" : "buy-token"} onClick={() => openOrder(token)}>{token.locked ? <><AppIcon name="lock" /> locked</> : <>trade ${buySize}</>}</button></article>;
+function TokenRow({ token, tokenIndex, buySize, favorite, toggleFavorite, openOrder, openDetail }: { token: Token; tokenIndex: number; buySize: number; favorite: boolean; toggleFavorite: (ticker: string) => void; openOrder: (token: Token) => void; openDetail: (token: Token) => void }) {
+  return <article className="token-row" role="button" tabIndex={0} onClick={() => openDetail(token)} onKeyDown={(event) => { if (event.key === "Enter") openDetail(token); }}><button type="button" className={`favorite-token ${favorite ? "active" : ""}`} aria-label={`${favorite ? "Remove" : "Add"} ${token.ticker} ${favorite ? "from" : "to"} favorites`} onClick={(event) => { event.stopPropagation(); toggleFavorite(token.ticker); }}><AppIcon name="star" /></button><span className={`token-avatar avatar-${tokenIndex}`}>{token.ticker.slice(0, 1)}</span><div className="token-main"><div><b>{token.ticker}</b><span>{token.name}</span><small>{token.chain} · {token.ticker.slice(0, 4)}...paper</small></div><p>{token.ageMinutes < 60 ? `${token.ageMinutes}m` : `${Math.floor(token.ageMinutes / 60)}h`}</p><div className="token-tags"><span>LIQ ${formatCompact(token.liquidity)}</span><span>HLD {token.holders}</span><span>T10 {token.top10}%</span></div></div><div className="token-metrics"><small>MC</small><b>${formatCompact(token.marketCap)}</b><span>V ${formatCompact(token.volume)}</span><em className={token.change >= 0 ? "positive" : "negative"}>{token.change >= 0 ? "+" : ""}{token.change.toFixed(1)}%</em></div><button type="button" className={token.locked ? "buy-token locked" : "buy-token"} onClick={(event) => { event.stopPropagation(); openOrder(token); }}>{token.locked ? <><AppIcon name="lock" /> locked</> : <>trade ${buySize}</>}</button></article>;
 }
 
 type PositionRow = Position & { token: Token; value: number; pnl: number };
@@ -338,5 +371,75 @@ function BlockPicker({ tiers, close, activate }: { tiers: BlockTier[]; close: ()
 }
 
 function OrderModal({ token, side, setSide, amount, setAmount, paperCash, userName, close, submit }: { token: Token; side: OrderSide; setSide: (side: OrderSide) => void; amount: number; setAmount: (amount: number) => void; paperCash: number; userName: string | null; close: () => void; submit: (event: FormEvent<HTMLFormElement>) => void }) {
-  return <div className="auth-overlay order-overlay" role="dialog" aria-modal="true" aria-labelledby="order-title"><div className="auth-backdrop" onClick={close} /><form className="auth-modal order-modal" onSubmit={submit}><button type="button" className="auth-close" onClick={close} aria-label="Close"><AppIcon name="x" /></button><span className="modal-kicker">Paper order · {token.chain}</span><div className="order-asset"><i>{token.ticker.slice(0, 1)}</i><div><h2 id="order-title">{token.ticker}</h2><p>{token.name} · {formatPrice(token.price)}</p></div></div><div className="side-tabs"><button type="button" className={side === "buy" ? "active buy" : ""} onClick={() => setSide("buy")}>Buy</button><button type="button" className={side === "sell" ? "active sell" : ""} onClick={() => setSide("sell")}>Sell</button></div><label className="order-input">Order value<span>$</span><input autoFocus value={amount} min={1} step={1} onChange={(event) => setAmount(Math.max(1, Number(event.target.value) || 1))} type="number" /><small>{formatCompact(amount / token.price)} {token.ticker}</small></label><div className="quick-amounts">{[25, 50, 100, 250].map((value) => <button type="button" key={value} onClick={() => setAmount(value)}>${value}</button>)}</div><div className="order-summary"><span>Available paper cash <b>{formatCurrency(paperCash, 2)}</b></span><span>Estimated fill <b>{formatPrice(token.price)}</b></span><span>Network fee <b>$0.00</b></span></div><button type="submit" className={`execute-order ${side}`}>{userName ? `${side === "buy" ? "Buy" : "Sell"} ${token.ticker}` : "Continue to demo access"}</button><small className="simulation-note">Simulated fill only · no wallet approval or live transaction.</small></form></div>;
+  return <div className="auth-overlay order-overlay" role="dialog" aria-modal="true" aria-labelledby="order-title"><div className="auth-backdrop" onClick={close} /><form className="auth-modal order-modal" onSubmit={submit}><button type="button" className="auth-close" onClick={close} aria-label="Close"><AppIcon name="x" /></button><span className="modal-kicker">Paper order · {token.chain}</span><div className="order-asset"><i>{token.ticker.slice(0, 1)}</i><div><h2 id="order-title">{token.ticker}</h2><p>{token.name} · {formatPrice(token.price)}</p></div></div><div className="side-tabs"><button type="button" className={side === "buy" ? "active buy" : ""} onClick={() => setSide("buy")}>Buy</button><button type="button" className={side === "sell" ? "active sell" : ""} onClick={() => setSide("sell")}>Sell</button></div><label className="order-input">Order value<span>$</span><input autoFocus value={amount} inputMode="decimal" onChange={(event) => { const raw = event.target.value.replace(/[^0-9.]/g, ""); setAmount(raw === "" ? 0 : Math.max(0, Number(raw) || 0)); }} onBlur={() => setAmount((value) => Math.max(1, value))} type="text" /><small>{formatCompact(amount / token.price)} {token.ticker}</small></label><div className="quick-amounts">{[25, 50, 100, 250].map((value) => <button type="button" key={value} onClick={() => setAmount(value)}>${value}</button>)}</div><div className="order-summary"><span>Available paper cash <b>{formatCurrency(paperCash, 2)}</b></span><span>Estimated fill <b>{formatPrice(token.price)}</b></span><span>Network fee <b>$0.00</b></span></div><button type="submit" className={`execute-order ${side}`}>{userName ? `${side === "buy" ? "Buy" : "Sell"} ${token.ticker}` : "Continue to demo access"}</button><small className="simulation-note">Simulated fill only · no wallet approval or live transaction.</small></form></div>;
+}
+
+function PriceChart({ candles }: { candles: Candle[] }) {
+  if (candles.length === 0) return <div className="chart-empty"><span>Not enough trade history yet for a chart</span></div>;
+  const width = 900;
+  const height = 320;
+  const padding = 12;
+  const high = Math.max(...candles.map((candle) => candle.high));
+  const low = Math.min(...candles.map((candle) => candle.low));
+  const range = Math.max(high - low, high * 0.0005, 1e-9);
+  const slot = width / candles.length;
+  const toY = (value: number) => padding + (1 - (value - low) / range) * (height - padding * 2);
+  return <svg className="price-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label="Price chart">
+    {candles.map((candle, index) => {
+      const x = index * slot + slot / 2;
+      const positive = candle.close >= candle.open;
+      const bodyTop = toY(Math.max(candle.open, candle.close));
+      const bodyBottom = toY(Math.min(candle.open, candle.close));
+      const color = positive ? "var(--positive)" : "var(--red)";
+      return <g key={candle.time}>
+        <line x1={x} x2={x} y1={toY(candle.high)} y2={toY(candle.low)} stroke={color} strokeWidth={1} />
+        <rect x={x - slot * 0.32} y={bodyTop} width={Math.max(1, slot * 0.64)} height={Math.max(1, bodyBottom - bodyTop)} fill={color} />
+      </g>;
+    })}
+  </svg>;
+}
+
+function TokenDetailView({ token, detail, loading, buySize, close, openOrder }: { token: Token; detail: TokenDetail | null; loading: boolean; buySize: number; close: () => void; openOrder: (token: Token, side?: OrderSide) => void }) {
+  const safety = detail?.safety;
+  const warnings = safety?.warnings ?? [];
+  return <div className="app-view token-detail">
+    <button type="button" className="secondary-action back-action" onClick={close}><AppIcon name="chevron" /> Back to Trenches</button>
+    <div className="token-detail-head">
+      <span className={`token-avatar avatar-lg`}>{token.ticker.slice(0, 1)}</span>
+      <div>
+        <h1>{token.ticker} <small>{token.name}</small></h1>
+        <p>{token.chain} · {token.launchpad} · {token.ageMinutes < 60 ? `${token.ageMinutes}m` : `${Math.floor(token.ageMinutes / 60)}h`} old · {token.ticker.slice(0, 4)}...paper</p>
+      </div>
+      <div className="token-detail-price">
+        <b>{formatPrice(detail?.price ?? token.price)}</b>
+        <em className={(detail?.change ?? token.change) >= 0 ? "positive" : "negative"}>{(detail?.change ?? token.change) >= 0 ? "+" : ""}{(detail?.change ?? token.change).toFixed(1)}%</em>
+      </div>
+      <button type="button" className="primary-action" onClick={() => openOrder(token)}>trade ${buySize}</button>
+    </div>
+
+    <div className="summary-grid token-detail-stats">
+      <article><span>Liquidity</span><b>${formatCompact(detail?.liqUsd ?? token.liquidity)}</b></article>
+      <article><span>Holders</span><b>{detail?.holders ?? token.holders}</b></article>
+      <article><span>Top 10</span><b>{(detail?.top10Pct ?? token.top10)}%</b></article>
+      <article><span>Market cap</span><b>${formatCompact(detail?.mcUsd ?? token.marketCap)}</b></article>
+    </div>
+
+    <div className="token-detail-chart">{loading ? <div className="chart-empty"><span>Loading chart…</span></div> : <PriceChart candles={detail?.candles ?? []} />}</div>
+
+    {safety ? <div className="safety-panel">
+      <div className="safety-head"><b>Safety check</b><span className={warnings.length === 0 ? "positive" : "negative"}>{warnings.length === 0 ? "Looks okay" : `${warnings.length} warning${warnings.length > 1 ? "s" : ""}`}</span></div>
+      <div className="safety-grid">
+        <article><span>Score</span><b>{safety.score}</b></article>
+        <article><span>Top 10</span><b>{safety.top10Pct}%</b></article>
+        <article><span>Dev wallet</span><b>{safety.devWalletPct}%</b></article>
+        <article><span>Liquidity</span><b>${formatCompact(safety.liquidityUsd)}</b></article>
+      </div>
+      {warnings.length > 0 ? <ul className="safety-warnings">{warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul> : null}
+    </div> : null}
+
+    <div className="data-table token-detail-trades">
+      <div className="data-row data-head"><span>age</span><span>side</span><span>usd</span><span>price</span><span>trader</span><span /></div>
+      {detail && detail.trades.length > 0 ? detail.trades.map((trade) => <div className="data-row" key={trade.id}><span>{trade.ageSec < 60 ? `${trade.ageSec}s` : `${Math.floor(trade.ageSec / 60)}m`}</span><span className={trade.side === "buy" ? "positive" : "negative"}>{trade.side}</span><span>{formatCurrency(trade.usd, 2)}</span><span>{formatPrice(trade.priceUsd)}</span><span>{trade.wallet.slice(0, 6)}...</span><span /></div>) : <div className="data-row"><span>{loading ? "Loading trade history…" : "No recorded trades yet"}</span></div>}
+    </div>
+  </div>;
 }
