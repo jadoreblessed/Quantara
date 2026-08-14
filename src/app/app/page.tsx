@@ -102,6 +102,14 @@ export default function AppPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void api("/api/app/snapshot").catch(() => flash("Backend snapshot unavailable · using bundled demo data"));
+
+    // Live prices: the trenches list and any open detail view are stale
+    // without this — the backend has fresh Birdeye data on every call,
+    // but nothing was ever asking for it again after the first load.
+    const interval = setInterval(() => {
+      void api("/api/app/snapshot").catch(() => {});
+    }, 4000);
+    return () => clearInterval(interval);
   }, [api, flash]);
 
   const visibleTokens = useMemo(() => {
@@ -171,6 +179,20 @@ export default function AppPage() {
     setViewingToken(null);
     setTokenDetail(null);
   }, []);
+
+  useEffect(() => {
+    if (!viewingToken) return;
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/token/${encodeURIComponent(viewingToken.token)}`);
+        const payload = await response.json();
+        if (response.ok) setTokenDetail(payload as TokenDetail);
+      } catch {
+        // silent — keep showing the last good data rather than flashing an error every tick
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [viewingToken]);
 
   const submitAuth = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -344,8 +366,16 @@ function TrenchesView(props: TrenchesProps) {
   </>;
 }
 
+function TokenAvatar({ token, index, size = "sm" }: { token: Token; index: number; size?: "sm" | "lg" }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = token.icon && !failed;
+  return <span className={`token-avatar avatar-${index} ${size === "lg" ? "avatar-lg" : ""}`}>
+    {showImage ? <img src={token.icon} alt="" loading="lazy" onError={() => setFailed(true)} /> : token.ticker.slice(0, 1)}
+  </span>;
+}
+
 function TokenRow({ token, tokenIndex, buySize, favorite, toggleFavorite, openOrder, openDetail }: { token: Token; tokenIndex: number; buySize: number; favorite: boolean; toggleFavorite: (ticker: string) => void; openOrder: (token: Token) => void; openDetail: (token: Token) => void }) {
-  return <article className="token-row" role="button" tabIndex={0} onClick={() => openDetail(token)} onKeyDown={(event) => { if (event.key === "Enter") openDetail(token); }}><button type="button" className={`favorite-token ${favorite ? "active" : ""}`} aria-label={`${favorite ? "Remove" : "Add"} ${token.ticker} ${favorite ? "from" : "to"} favorites`} onClick={(event) => { event.stopPropagation(); toggleFavorite(token.ticker); }}><AppIcon name="star" /></button><span className={`token-avatar avatar-${tokenIndex}`}>{token.ticker.slice(0, 1)}</span><div className="token-main"><div><b>{token.ticker}</b><span>{token.name}</span><small>{token.chain} · {token.ticker.slice(0, 4)}...paper</small></div><p>{token.ageMinutes < 60 ? `${token.ageMinutes}m` : `${Math.floor(token.ageMinutes / 60)}h`}</p><div className="token-tags"><span>LIQ ${formatCompact(token.liquidity)}</span><span>HLD {token.holders}</span><span>T10 {token.top10}%</span></div></div><div className="token-metrics"><small>MC</small><b>${formatCompact(token.marketCap)}</b><span>V ${formatCompact(token.volume)}</span><em className={token.change >= 0 ? "positive" : "negative"}>{token.change >= 0 ? "+" : ""}{token.change.toFixed(1)}%</em></div><button type="button" className={token.locked ? "buy-token locked" : "buy-token"} onClick={(event) => { event.stopPropagation(); openOrder(token); }}>{token.locked ? <><AppIcon name="lock" /> locked</> : <>trade ${buySize}</>}</button></article>;
+  return <article className="token-row" role="button" tabIndex={0} onClick={() => openDetail(token)} onKeyDown={(event) => { if (event.key === "Enter") openDetail(token); }}><button type="button" className={`favorite-token ${favorite ? "active" : ""}`} aria-label={`${favorite ? "Remove" : "Add"} ${token.ticker} ${favorite ? "from" : "to"} favorites`} onClick={(event) => { event.stopPropagation(); toggleFavorite(token.ticker); }}><AppIcon name="star" /></button><TokenAvatar token={token} index={tokenIndex} /><div className="token-main"><div><b>{token.ticker}</b><span>{token.name}</span><small>{token.chain} · {token.ticker.slice(0, 4)}...paper</small></div><p>{token.ageMinutes < 60 ? `${token.ageMinutes}m` : `${Math.floor(token.ageMinutes / 60)}h`}</p><div className="token-tags"><span>LIQ ${formatCompact(token.liquidity)}</span><span>HLD {token.holders}</span><span>T10 {token.top10}%</span></div></div><div className="token-metrics"><small>MC</small><b>${formatCompact(token.marketCap)}</b><span>V ${formatCompact(token.volume)}</span><em className={token.change >= 0 ? "positive" : "negative"}>{token.change >= 0 ? "+" : ""}{token.change.toFixed(1)}%</em></div><button type="button" className={token.locked ? "buy-token locked" : "buy-token"} onClick={(event) => { event.stopPropagation(); openOrder(token); }}>{token.locked ? <><AppIcon name="lock" /> locked</> : <>trade ${buySize}</>}</button></article>;
 }
 
 type PositionRow = Position & { token: Token; value: number; pnl: number };
@@ -405,7 +435,7 @@ function TokenDetailView({ token, detail, loading, buySize, close, openOrder }: 
   return <div className="app-view token-detail">
     <button type="button" className="secondary-action back-action" onClick={close}><AppIcon name="chevron" /> Back to Trenches</button>
     <div className="token-detail-head">
-      <span className={`token-avatar avatar-lg`}>{token.ticker.slice(0, 1)}</span>
+      <TokenAvatar token={token} index={0} size="lg" />
       <div>
         <h1>{token.ticker} <small>{token.name}</small></h1>
         <p>{token.chain} · {token.launchpad} · {token.ageMinutes < 60 ? `${token.ageMinutes}m` : `${Math.floor(token.ageMinutes / 60)}h`} old · {token.ticker.slice(0, 4)}...paper</p>

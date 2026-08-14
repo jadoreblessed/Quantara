@@ -2145,7 +2145,10 @@ svg {
   color: white;
   background: linear-gradient(135deg, #16385f, #f0b846);
   font-weight: 950;
+  overflow: hidden;
+  flex-shrink: 0;
 }
+.token-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .avatar-1 { background: linear-gradient(135deg, #865b2c, #f8efe6); }
 .avatar-2 { background: linear-gradient(135deg, #12371f, #91ff5c); }

@@ -124,8 +124,8 @@ export async function getBirdeyeCatalog(query = "") {
     const metadata = await getBirdeyeMetadata(liveTokens.map((t) => t.token), chain);
     liveTokens = liveTokens.map((token) => {
       const meta = asRecord(metadata[token.token]);
-      const logoUrl = asString(meta.logo_uri ?? meta.logoURI, "");
-      return logoUrl ? { ...token, logoUrl } : token;
+      const icon = asString(meta.logo_uri ?? meta.logoURI, "");
+      return icon ? { ...token, icon } : token;
     });
   } catch {
     // метадата — не критична, отдаём токены без лого, если батч упал
