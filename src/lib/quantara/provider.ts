@@ -6,8 +6,9 @@ export async function getMarketCatalog(query = "") {
   if (isLiveBackend() && backendConfig.marketDataProvider === "birdeye" && backendConfig.marketDataKey) {
     try {
       return { ...(await getBirdeyeCatalog(query)), blockTiers };
-    } catch {
+    } catch (error) {
       // Simulation fallback keeps the app usable while provider credentials, package access or rate limits are not ready.
+      console.error("[quantara] Birdeye catalog fetch failed, falling back to simulation:", error);
     }
   }
 
